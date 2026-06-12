@@ -1029,19 +1029,16 @@ CREATE INDEX idx_results_played ON game_results(played_at);
 
 #### 4.21.4. Клиентская логика (`js/ui/profile.js`)
 
-```javascript
-/**
- * Profile Screen Module
- * Handles auth forms, profile display, and game history.
- */
+**Важно:** Формы login/register — это `<div>`, а не `<form>`. Кнопки отправки привязаны через `click`, а не `submit`. Причина: `<form>` ломает layout нижнего нав-бара (Tailwind CSS конфликт).
 
+```javascript
 export function initProfile(auth) {
-    // Auth state listener — переключает между auth/user views
     auth.onChange(user => renderProfile(user));
 
     // Tab switching (Login / Register)
-    // Form submissions (login, register)
-    // Logout button
+    // Login: click → auth.login(username, password)
+    // Register: click → auth.register(username, password, email)
+    // Logout: click → auth.logout()
     // History loading: GET /api/users/:id/history
     // Stats loading: GET /api/users/:id/stats
 }
@@ -1581,3 +1578,5 @@ const { history } = await historyRes.json();
 3. **Social — заглушка:** кнопка Social в bottom nav bar не имеет функционала (показывает toast «Coming soon»).
 
 4. **`assets/fonts/` пустая:** шрифты загружаются через CDN, локальные fallback-шрифты отсутствуют.
+
+5. **Login/Register формы — `<div>` вместо `<form>`:** в SPEC указаны `<form>`, но реальный код использует `<div>` с click-обработчиками на кнопках. Причина: `<form>` ломает layout нижнего нав-бара (Tailwind CSS). Если кто-то будет менять форму на `<form>` — проверять отображение bottom nav bar.
