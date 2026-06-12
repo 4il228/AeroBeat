@@ -75,7 +75,7 @@ js/
 │   ├── routes/
 │   │   ├── tracks.js       # CRUD /api/tracks (GET list, GET :id, POST publish, DELETE :id)
 │   │   ├── auth.js         # Авторизация: POST register, POST login, GET me, PUT profile
-│   │   └── results.js      # История игр: POST /api/results, GET /api/users/:id/history
+│   │   └── results.js      # История игр: POST /api/results, GET /api/users/:id/history, GET /api/users/:id/stats
 │   ├── uploads/
 │   │   └── tracks/         # Хранилище аудиофайлов ({SHA-256 hash}.{ext})
 │   └── aerobeat.db         # SQLite database файл (WAL mode)
@@ -91,7 +91,8 @@ js/
 │   ├── analyzer.test.js    # 6 tests — все зелёные
 │   ├── hitDetection.test.js # 6 tests — все зелёные
 │   ├── scoring.test.js     # 16 tests — все зелёные
-│   └── auth.test.js        # 13 tests — все зелёные
+│   ├── auth.test.js        # 13 tests — все зелёные
+│   └── results.test.js     # tests — после реализации Фазы 9
 └── package.json            # Зависимости backend + scripts (express, better-sqlite3, multer, cors, bcryptjs, jsonwebtoken, express-rate-limit)
 ```
 
@@ -1295,6 +1296,260 @@ Menu → Loading → Gameplay → Results → Menu
 7. ✅ **`js/ui/screens.js`** — `'screen-profile'` в `SCREEN_IDS`.
 8. ✅ **`js/app.js`** — Auth init, initProfile(auth), nav bar Profile → navigate, Social → toast.
 9. ✅ **`tests/auth.test.js`** — 13 tests: register/login/me/middleware.
+
+### Фаза 9: История игр и результаты
+**Статус:** Не реализована.
+
+**Контекст:** Базовая авторизация и профиль уже работают (Фаза 8). Сейчас при завершении игры результат не сохраняется. Нужно: сохранять результат каждой игры на сервере, показывать историю в профиле, показывать статистику.
+
+**Зависимости:** Дополнительные пакеты не нужны — всё работает на существующих `better-sqlite3` + `jsonwebtoken`.
+
+---
+
+#### 9.1. Backend: таблица `game_results`
+
+**Файл:** `server/db.js` — добавить в `initSchema()` после таблицы `users`:
+
+```sql
+CREATE TABLE IF NOT EXISTS game_results (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL,
+    track_id      INTEGER,
+    track_title   TEXT NOT NULL,
+    score         INTEGER NOT NULL,
+    accuracy      REAL NOT NULL,
+    grade         TEXT NOT NULL,
+    max_combo     INTEGER NOT NULL,
+    perfect_count INTEGER NOT NULL,
+    good_count    INTEGER NOT NULL,
+    miss_count    INTEGER NOT NULL,
+    total_notes   INTEGER NOT NULL,
+    played_at     TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_results_user ON game_results(user_id);
+CREATE INDEX IF NOT EXISTS idx_results_track ON game_results(track_id);
+CREATE INDEX IF NOT EXISTS idx_results_played ON game_results(played_at);
+```
+
+**Важно:**
+- `user_id` — обязательный (результат привязан к пользователю).
+- `track_id` — опциональный (NULL если трек удалён).
+- `track_title` — дублируется на случай удаления трека.
+- `ON DELETE CASCADE` для user, `ON DELETE SET NULL` для track.
+
+---
+
+#### 9.2. Backend: маршруты результатов
+
+**Новый файл:** `server/routes/results.js`
+
+Импорты: `Router` из `express`, `getDb` из `../db.js`, `authenticateToken` из `./auth.js`.
+
+**Маршруты:**
+
+##### `POST /api/results` — сохранить результат (защищённый)
+
+Тело запроса (JSON):
+```json
+{
+    "track_id": 1,
+    "track_title": "My Song",
+    "score": 125000,
+    "accuracy": 92.5,
+    "grade": "A",
+    "max_combo": 150,
+    "perfect_count": 280,
+    "good_count": 40,
+    "miss_count": 12,
+    "total_notes": 332
+}
+```
+
+Логика:
+1. `authenticateToken` → `req.user.id`.
+2. Валидация обязательных полей (score, accuracy, grade, max_combo, perfect_count, good_count, miss_count, total_notes).
+3. `track_id` опциональный (может быть null для локальных файлов).
+4. Вставка в `game_results`.
+5. Вернуть 201: `{ id, played_at }`.
+
+Ошибки:
+- 400 — невалидные данные.
+- 401 — не авторизован.
+- 500 — ошибка сервера.
+
+##### `GET /api/users/:id/history` — история игр (публичный)
+
+Параметр: `id` — ID пользователя.
+
+Ответ (200):
+```json
+{
+    "history": [
+        {
+            "id": 1,
+            "track_title": "My Song",
+            "score": 125000,
+            "accuracy": 92.5,
+            "grade": "A",
+            "max_combo": 150,
+            "played_at": "2025-01-15T12:00:00Z"
+        }
+    ]
+}
+```
+
+- Сортировка: `played_at DESC` (новые сверху).
+- Лимит: последние 50 игр.
+- Поля `perfect_count`, `good_count`, `miss_count`, `total_notes` не отдаются в списке.
+
+##### `GET /api/users/:id/stats` — статистика пользователя (публичный)
+
+Ответ (200):
+```json
+{
+    "total_games": 42,
+    "average_accuracy": 87.3,
+    "best_grade": "S",
+    "total_perfects": 8500,
+    "favorite_track": "My Song",
+    "joined_at": "2025-01-15T12:00:00Z"
+}
+```
+
+- `total_games` — COUNT(*).
+- `average_accuracy` — AVG(accuracy).
+- `best_grade` — лучший грейд (S > A > B > C > D). Вычислять через CASE WHEN или на JS.
+- `total_perfects` — SUM(perfect_count).
+- `favorite_track` — трек с наибольшим количеством игр (GROUP BY track_title ORDER BY COUNT(*) DESC LIMIT 1).
+- `joined_at` — из таблицы `users`.
+
+---
+
+#### 9.3. Backend: подключение роутера
+
+**Файл:** `server/server.js`
+
+Добавить импорт и подключение:
+```javascript
+import resultsRouter from './routes/results.js';
+app.use('/api', resultsRouter);
+```
+
+Подключить **после** auth-роутера (нужен `authenticateToken`).
+
+---
+
+#### 9.4. Frontend: сохранение результата игры
+
+**Файл:** `js/app.js` — функция `handleGameEnd()`
+
+После вычисления `accuracy` и `grade` (после строки `showResults(...)`), добавить:
+
+```javascript
+if (auth && auth.isLoggedIn) {
+    try {
+        await fetch('/api/results', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...auth.authHeader
+            },
+            body: JSON.stringify({
+                track_id: currentTrackId || null,
+                track_title: currentBeatmap.metadata.title,
+                score: scoringState.score,
+                accuracy,
+                grade,
+                max_combo: scoringState.maxCombo,
+                perfect_count: scoringState.perfectCount,
+                good_count: scoringState.goodCount,
+                miss_count: scoringState.missCount,
+                total_notes: currentBeatmap.notes.length
+            })
+        });
+    } catch { /* тихо — результат не критичен */ }
+}
+```
+
+**Важно:** `currentTrackId` — переменная, которая задаётся при запуске игры из Library (из `handleLibraryPlay`). Для локальных файлов = null. Нужно добавить переменную `currentTrackId` в state app.js и устанавливать её в `handleLibraryPlay(trackId)`.
+
+---
+
+#### 9.5. Frontend: обновление Profile screen
+
+**Файл:** `js/ui/profile.js`
+
+В `renderProfile(user)` — когда `user` не null, после отображения базовой информации загружать историю и статистику:
+
+```javascript
+// Загрузка статистики
+const statsRes = await fetch(`/api/users/${user.id}/stats`);
+const stats = await statsRes.json();
+// Заполнить элементы: stat-total-games, stat-avg-accuracy, stat-best-grade, stat-total-perfects
+
+// Загрузка истории
+const historyRes = await fetch(`/api/users/${user.id}/history`);
+const { history } = await historyRes.json();
+// Отрисовать карточки результатов в #profile-history-list
+```
+
+**HTML-элементы** (уже есть в `index.html` секции `#screen-profile`):
+- `#stat-total-games` — span для числа игр.
+- `#stat-avg-accuracy` — span для средней accuracy.
+- `#stat-best-grade` — span для лучшего грейда.
+- `#stat-total-perfects` — span для общего числа perfects.
+- `#profile-history-list` — контейнер для карточек результатов.
+- `#profile-history-empty` — заглушка «No games played yet».
+
+**Карточка результата** (HTML-шаблон из SPEC 4.21.3):
+```html
+<div class="aero-glass rounded-2xl p-4 border border-white/50 flex items-center justify-between">
+    <div class="flex-1">
+        <p class="font-headline-md text-on-surface text-sm">{track_title}</p>
+        <p class="font-label-sm text-on-surface-variant/60 text-[10px]">{formatted_date}</p>
+    </div>
+    <div class="flex items-center gap-4">
+        <div class="text-right">
+            <p class="font-body-md text-on-surface font-bold">{formatted_score}</p>
+            <p class="font-label-sm text-on-surface-variant/60 text-[10px]">{accuracy}%</p>
+        </div>
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-200 to-orange-400 flex items-center justify-center">
+            <span class="font-display-lg text-xl font-black text-white drop-shadow">{grade}</span>
+        </div>
+    </div>
+</div>
+```
+
+Форматирование:
+- `formatted_score`: число с разделителем тысяч (125000 → "125,000").
+- `formatted_date`: "Jan 15, 2025" (через `Date.toLocaleDateString`).
+
+---
+
+#### 9.6. Тесты
+
+**Новый файл:** `tests/results.test.js`
+
+Тесты через Express test server (аналогично `tests/auth.test.js`):
+1. `POST /api/results` — успешное сохранение / без авторизации / невалидные данные.
+2. `GET /api/users/:id/history` — возвращает историю / пустая история.
+3. `GET /api/users/:id/stats` — возвращает статистику / нулевая статистика.
+
+---
+
+#### 9.7. Чеклист для агента
+
+1. **`server/db.js`** — добавить таблицу `game_results` + индексы в `initSchema()`.
+2. **`server/routes/results.js`** — создать файл: POST /api/results, GET /api/users/:id/history, GET /api/users/:id/stats.
+3. **`server/server.js`** — импортировать и подключить `resultsRouter`.
+4. **`js/app.js`** — добавить `currentTrackId` в state, устанавливать в `handleLibraryPlay`, вызывать POST /api/results в `handleGameEnd` (если авторизован).
+5. **`js/ui/profile.js`** — загружать и отображать статистику + историю в `renderProfile`.
+6. **`tests/results.test.js`** — тесты для всех эндпоинтов.
+7. **`npm test`** — все тесты зелёные.
+8. **SPEC.md** — обновить статус Фазы 9 на ✅ DONE.
 
 ## 7. Правила разработки
 
