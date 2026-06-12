@@ -26,7 +26,8 @@ async function createTestApp() {
 }
 
 beforeAll(async () => {
-    getDb();
+    const db = getDb();
+    db.prepare("DELETE FROM users WHERE username LIKE 'usr%'").run();
     app = await createTestApp();
     server = app.listen(PORT);
 });
