@@ -1,0 +1,6 @@
+node_modules/
+server/aerobeat.db*
+server/uploads/tracks/
+.env
+letter.txt
+letter_mcp_answer.txt

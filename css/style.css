@@ -1,0 +1,846 @@
+/* ============================================================
+   AeroBeat — Global Styles & CSS Custom Properties
+   Frutiger Aero Design System
+   ============================================================ */
+
+:root {
+    /* ── Glass Surfaces ── */
+    --glass-white: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.6);
+
+    /* ── Brand Colors ── */
+    --aero-blue: #00aeef;
+    --aero-blue-deep: #004c6b;
+    --aero-blue-light: #c6e7ff;
+    --aero-blue-primary: #00658d;
+    --aero-green: #b8f568;
+    --aero-green-dark: #426900;
+
+    /* ── Material Design Tokens ── */
+    --color-surface: #f9f9ff;
+    --color-surface-dim: #c8dbff;
+    --color-on-surface: #001b3c;
+    --color-on-surface-variant: #3e4850;
+    --color-primary: #00658d;
+    --color-primary-container: #00aeef;
+    --color-on-primary: #ffffff;
+    --color-on-primary-container: #003e58;
+    --color-secondary: #426900;
+    --color-secondary-container: #b8f568;
+    --color-on-secondary: #ffffff;
+    --color-error: #ba1a1a;
+    --color-error-container: #ffdad6;
+    --color-outline: #6e7881;
+    --color-inverse-surface: #003061;
+    --color-inverse-on-surface: #ecf1ff;
+
+    /* ── Typography ── */
+    --font-display: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Work Sans', sans-serif;
+
+    /* ── Spacing ── */
+    --spacing-unit: 8px;
+    --spacing-container-padding: 24px;
+    --spacing-gutter: 16px;
+    --spacing-glass-margin: 12px;
+
+    /* ── Border Radius ── */
+    --radius-sm: 0.25rem;
+    --radius-default: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-full: 9999px;
+}
+
+/* ============================================================
+   Base Reset & Body
+   ============================================================ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-display);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #7ec8e3;
+    overflow: hidden;
+    color: var(--color-on-surface);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   Aurora Background — Frutiger Aero Light Streaks
+   ============================================================ */
+
+.aurora-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background: linear-gradient(160deg, #b8e6d0 0%, #7ec8e3 35%, #4fc3f7 70%, #81d4fa 100%);
+}
+
+.aurora-bg::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: -10%;
+    width: 120%;
+    height: 140%;
+    background:
+        radial-gradient(ellipse 70% 50% at 25% 55%, rgba(184, 245, 104, 0.6) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 65% 35%, rgba(0, 200, 255, 0.5) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 55% at 45% 75%, rgba(129, 212, 250, 0.6) 0%, transparent 50%);
+    animation: aurora-shift 25s ease-in-out infinite alternate;
+}
+
+.aurora-bg::after {
+    content: '';
+    position: absolute;
+    top: 5%;
+    right: -5%;
+    width: 70%;
+    height: 110%;
+    background:
+        radial-gradient(ellipse 60% 40% at 55% 45%, rgba(178, 255, 160, 0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 35% at 35% 65%, rgba(0, 210, 255, 0.4) 0%, transparent 50%);
+    animation: aurora-shift 20s ease-in-out 4s infinite alternate-reverse;
+}
+
+@keyframes aurora-shift {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    50% {
+        transform: translate(4%, -3%) rotate(4deg) scale(1.08);
+    }
+    100% {
+        transform: translate(-3%, 4%) rotate(-3deg) scale(1.02);
+    }
+}
+
+/* Aurora Ribbon Layers */
+.aurora-ribbon {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(35px);
+    pointer-events: none;
+}
+
+.aurora-ribbon.green {
+    background: rgba(184, 245, 104, 0.35);
+}
+
+.aurora-ribbon.blue {
+    background: rgba(0, 174, 239, 0.3);
+}
+
+.aurora-ribbon.white {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================================
+   Aero Glass — Glassmorphism Panels
+   ============================================================ */
+
+.aero-glass {
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 8px 32px rgba(0, 51, 102, 0.15),
+        inset 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================
+   Glossy Button — Frutiger Aero Style
+   ============================================================ */
+
+.glossy-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.15),
+        inset 0 -6px 12px rgba(0, 0, 0, 0.1),
+        inset 0 2px 4px rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    outline: none;
+}
+
+.glossy-button::before {
+    content: '';
+    position: absolute;
+    top: 2%;
+    left: 5%;
+    width: 90%;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 50% / 100% 100% 0 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.glossy-button:active {
+    transform: scale(0.96);
+    box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================================
+   Liquid-Fill Progress Bar
+   ============================================================ */
+
+.liquid-fill {
+    background: linear-gradient(to bottom, #b8f568 0%, #426900 50%, #b8f568 100%);
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.8);
+    position: relative;
+}
+
+.liquid-fill::after {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.6);
+    filter: blur(1px);
+}
+
+/* ============================================================
+   Bokeh Bubbles — Frutiger Aero Atmosphere
+   ============================================================ */
+
+.bubble {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.25) 35%, rgba(255, 255, 255, 0.08) 65%, transparent 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    box-shadow:
+        inset 0 0 15px rgba(255, 255, 255, 0.2),
+        0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+.bubble.large {
+    background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.15) 40%, transparent 70%);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    box-shadow:
+        inset 0 0 25px rgba(255, 255, 255, 0.15),
+        0 0 20px rgba(255, 255, 255, 0.08);
+}
+
+.bubble.tinted {
+    background: radial-gradient(circle at 30% 30%, rgba(184, 245, 104, 0.4) 0%, rgba(0, 174, 239, 0.15) 40%, transparent 70%);
+    border-color: rgba(184, 245, 104, 0.25);
+}
+
+@keyframes float-up {
+    0% {
+        transform: translateY(100vh) scale(0.4);
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.5;
+    }
+    85% {
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(-20vh) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+   Water-Drop Note Style
+   ============================================================ */
+
+.water-drop {
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #00aeef 60%, #004c6b 100%);
+    border-radius: 50%;
+    box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        inset -2px -2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================================
+   Game Viewport — 16:9 Aspect Ratio
+   ============================================================ */
+
+.game-viewport {
+    width: 90vw;
+    height: 50.625vw; /* 16:9 ratio based on width */
+    max-width: 177.78vh; /* 16:9 ratio based on height */
+    max-height: 90vh; /* max height to prevent overflow */
+    position: relative;
+    margin: auto;
+}
+
+/* ============================================================
+   Material Symbols (icon font)
+   ============================================================ */
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ============================================================
+   Screen Containers
+   ============================================================ */
+
+.screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    z-index: 10;
+}
+
+.screen.hidden {
+    display: none;
+}
+
+/* ============================================================
+   Note Object (for gameplay)
+   ============================================================ */
+
+.note {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #00aeef 60%, #004c6b 100%);
+    box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        inset -2px -2px 6px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    will-change: transform;
+}
+
+/* ============================================================
+   Receptor — Glass Well
+   ============================================================ */
+
+.receptor {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 4px solid rgba(0, 101, 141, 0.2);
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: box-shadow 0.1s ease, border-color 0.1s ease;
+}
+
+.receptor.flash {
+    border-color: rgba(184, 245, 104, 0.8);
+    box-shadow:
+        inset 0 4px 10px rgba(0, 0, 0, 0.15),
+        0 0 20px rgba(184, 245, 104, 0.5);
+}
+
+/* ============================================================
+   Hit Feedback Text
+   ============================================================ */
+
+.hit-text {
+    position: absolute;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.5rem;
+    pointer-events: none;
+    animation: hit-float 0.6s ease-out forwards;
+    z-index: 100;
+}
+
+.hit-text.perfect {
+    color: var(--aero-green);
+    text-shadow: 0 0 10px rgba(184, 245, 104, 0.6);
+}
+
+.hit-text.good {
+    color: var(--aero-blue);
+    text-shadow: 0 0 10px rgba(0, 174, 239, 0.6);
+}
+
+.hit-text.miss {
+    color: var(--color-error);
+    text-shadow: 0 0 10px rgba(186, 26, 26, 0.4);
+}
+
+@keyframes hit-float {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-60px) scale(1.2);
+    }
+}
+
+/* ============================================================
+   Toast Notification
+   ============================================================ */
+
+.toast {
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120%);
+    padding: 1rem 2rem;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 32px rgba(0, 51, 102, 0.2);
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--color-on-surface);
+    z-index: 9999;
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+}
+
+.toast.visible {
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+    border-color: rgba(186, 26, 26, 0.3);
+    color: var(--color-error);
+}
+
+/* ============================================================
+   Scrollbar (minimal)
+   ============================================================ */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 101, 141, 0.3);
+    border-radius: var(--radius-full);
+}
+
+/* ============================================================
+   Particles — Green Sparkles on Perfect Hit
+   ============================================================ */
+
+.particle {
+    position: absolute;
+    pointer-events: none;
+    z-index: 100;
+    border-radius: 50%;
+    animation: particle-burst var(--particle-duration, 0.5s) ease-out forwards;
+}
+
+.particle.green {
+    background: radial-gradient(circle, #b8f568 0%, rgba(184, 245, 104, 0) 70%);
+    box-shadow: 0 0 6px rgba(184, 245, 104, 0.8);
+}
+
+.particle.blue {
+    background: radial-gradient(circle, #82cfff 0%, rgba(130, 207, 255, 0) 70%);
+    box-shadow: 0 0 6px rgba(130, 207, 255, 0.8);
+}
+
+.particle.white {
+    background: radial-gradient(circle, #ffffff 0%, rgba(255, 255, 255, 0) 70%);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+@keyframes particle-burst {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--px, 30px), var(--py, -30px)) scale(0.2);
+    }
+}
+
+/* ============================================================
+   Pause Overlay
+   ============================================================ */
+
+.pause-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 28, 60, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: fade-in 0.2s ease-out;
+    gap: 2rem;
+}
+
+.pause-overlay h2 {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.pause-overlay .pause-actions {
+    display: flex;
+    gap: 1.5rem;
+}
+
+/* ============================================================
+   Countdown Overlay
+   ============================================================ */
+
+.countdown-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    pointer-events: none;
+}
+
+.countdown-ring {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    animation: countdown-ring-pulse 1s ease-out infinite;
+}
+
+@keyframes countdown-ring-pulse {
+    0% { transform: scale(0.5); opacity: 0.7; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+.countdown-number {
+    position: absolute;
+    font-family: var(--font-display);
+    font-size: 130px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(0, 174, 239, 0.6), 0 0 80px rgba(0, 174, 239, 0.25), 0 4px 10px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    user-select: none;
+    animation: countdown-pop 0.85s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.countdown-number[data-value="3"] { animation-delay: 0s; }
+.countdown-number[data-value="2"] { animation-delay: 1s; }
+.countdown-number[data-value="1"] { animation-delay: 2s; }
+
+@keyframes countdown-pop {
+    0% { opacity: 0; transform: scale(0.4) translateY(15px); }
+    15% { opacity: 1; transform: scale(1.15) translateY(0); }
+    35% { transform: scale(0.95); }
+    50% { transform: scale(1.03); }
+    70% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.75) translateY(-20px); }
+}
+
+/* ============================================================
+   Responsive — Game Viewport Scaling
+   ============================================================ */
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .game-viewport {
+        width: 100vw;
+        height: 56.25vw;
+        max-width: none;
+        max-height: 100vh;
+        border-radius: 0;
+        border: none;
+    }
+
+    .receptor {
+        width: 56px;
+        height: 56px;
+    }
+
+    .receptor span {
+        font-size: 1.25rem;
+    }
+
+    .note {
+        width: 28px;
+        height: 28px;
+    }
+
+    #screen-main-menu h2 {
+        font-size: 40px;
+    }
+
+    #screen-gameplay .flex.justify-between.p-8 {
+        padding: 1rem;
+    }
+
+    #score-display,
+    #combo-display {
+        font-size: 24px;
+    }
+
+    #screen-results .aero-glass {
+        padding: 2rem;
+        border-radius: 2rem;
+    }
+
+    #result-grade {
+        font-size: 80px;
+    }
+
+    #screen-results .flex.gap-16 {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .receptor {
+        width: 44px;
+        height: 44px;
+        border-width: 3px;
+    }
+
+    .receptor span {
+        font-size: 1rem;
+    }
+
+    .note {
+        width: 22px;
+        height: 22px;
+    }
+
+    #screen-main-menu h2 {
+        font-size: 28px;
+    }
+
+    .glossy-button {
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+    }
+
+    .hit-text {
+        font-size: 1.1rem;
+    }
+
+    .volume-control-wrapper {
+        display: none;
+    }
+}
+
+/* ============================================================
+   Game Layout — Viewport + Volume side-by-side
+   ============================================================ */
+
+.game-layout {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    margin-right: 16px;
+}
+
+/* ============================================================
+   Volume Control — Frutiger Aero Vertical Slider
+   ============================================================ */
+
+.volume-control-wrapper {
+    flex-shrink: 0;
+    z-index: 50;
+    pointer-events: auto;
+}
+
+.volume-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 10px;
+    border-radius: var(--radius-xl);
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+        0 8px 32px rgba(0, 51, 102, 0.15),
+        inset 0 0 8px rgba(255, 255, 255, 0.3),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, background 0.3s ease;
+    cursor: default;
+}
+
+.volume-control:hover {
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 8px 32px rgba(0, 51, 102, 0.2),
+        inset 0 0 12px rgba(255, 255, 255, 0.4),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.volume-icon {
+    font-size: 20px;
+    color: var(--color-primary);
+    user-select: none;
+    flex-shrink: 0;
+    transition: color 0.2s ease;
+}
+
+.volume-control:hover .volume-icon {
+    color: var(--aero-blue-deep);
+}
+
+/* ── Vertical Range Slider (Track) ── */
+
+.volume-slider-wrap {
+    position: relative;
+    width: 6px;
+    height: 120px;
+    border-radius: 3px;
+    background: rgba(0, 51, 102, 0.12);
+}
+
+.volume-slider-wrap:hover {
+    width: 8px;
+}
+
+.volume-fill-track {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 3px;
+    background: linear-gradient(to top, var(--aero-green), var(--aero-green-light, #d4ff8f));
+    pointer-events: none;
+    transition: height 0.1s ease;
+}
+
+.volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 120px;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+}
+
+/* WebKit thumb */
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffffff 0%, #c6e7ff 40%, #00aeef 100%);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+        0 2px 8px rgba(0, 51, 102, 0.3),
+        inset 0 1px 3px rgba(255, 255, 255, 0.8),
+        inset 0 -1px 3px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow:
+        0 3px 12px rgba(0, 51, 102, 0.4),
+        inset 0 1px 3px rgba(255, 255, 255, 0.8),
+        inset 0 -1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.volume-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+    cursor: grabbing;
+}
+
+/* Mozilla vertical slider */
+.volume-slider::-moz-range {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 6px;
+    height: 120px;
+}
+
+.volume-slider::-moz-range-track {
+    width: 6px;
+    height: 120px;
+    border-radius: 3px;
+    background: rgba(0, 51, 102, 0.12);
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffffff 0%, #c6e7ff 40%, #00aeef 100%);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+        0 2px 8px rgba(0, 51, 102, 0.3),
+        inset 0 1px 3px rgba(255, 255, 255, 0.8),
+        inset 0 -1px 3px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow:
+        0 3px 12px rgba(0, 51, 102, 0.4),
+        inset 0 1px 3px rgba(255, 255, 255, 0.8),
+        inset 0 -1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.volume-slider::-moz-range-thumb:active {
+    transform: scale(1.05);
+    cursor: grabbing;
+}

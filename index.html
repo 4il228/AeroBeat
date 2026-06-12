@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>AeroBeat - Rhythm Experience</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Work+Sans:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed-variant": "#304f00",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-secondary-container": "#467000",
+                        "tertiary": "#5d5f5f",
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary-container": "#003e58",
+                        "on-background": "#001b3c",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "background": "#f9f9ff",
+                        "primary-fixed-dim": "#82cfff",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#82cfff",
+                        "surface-bright": "#f9f9ff",
+                        "on-surface-variant": "#3e4850",
+                        "surface": "#f9f9ff",
+                        "surface-tint": "#00658d",
+                        "primary": "#00658d",
+                        "surface-variant": "#d5e3ff",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-secondary-fixed": "#112000",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#d5e3ff",
+                        "secondary": "#426900",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#001e2d",
+                        "tertiary-container": "#a2a3a3",
+                        "surface-container": "#e7eeff",
+                        "secondary-fixed": "#b8f568",
+                        "on-primary-fixed-variant": "#004c6b",
+                        "primary-fixed": "#c6e7ff",
+                        "outline": "#6e7881",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#9dd84f",
+                        "surface-container-high": "#dee8ff",
+                        "on-tertiary-container": "#37393a",
+                        "outline-variant": "#bdc8d1",
+                        "inverse-surface": "#003061",
+                        "secondary-container": "#b8f568",
+                        "surface-dim": "#c8dbff",
+                        "primary-container": "#00aeef",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-surface": "#001b3c"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "glass-margin": "12px",
+                        "unit": "8px",
+                        "container-padding": "24px",
+                        "gutter": "16px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Work Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Work Sans"],
+                        "label-sm": ["Work Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-surface text-on-surface">
+
+    <!-- Aurora Background Layer -->
+    <div class="aurora-bg" id="aurora-bg">
+        <div class="aurora-ribbon green" style="width:50vw;height:40vh;top:5%;left:0%;"></div>
+        <div class="aurora-ribbon blue" style="width:45vw;height:35vh;top:25%;left:40%;"></div>
+        <div class="aurora-ribbon white" style="width:40vw;height:30vh;top:55%;left:10%;"></div>
+        <div class="aurora-ribbon green" style="width:55vw;height:40vh;top:45%;left:35%;"></div>
+        <div class="aurora-ribbon blue" style="width:40vw;height:25vh;top:0%;left:55%;"></div>
+    </div>
+
+    <!-- Bokeh Bubbles Layer -->
+    <div class="fixed inset-0 z-1 overflow-hidden pointer-events-none">
+        <div class="absolute inset-0" id="bubbles-container"></div>
+    </div>
+
+    <!-- Main Game Shell -->
+    <main class="relative z-10 w-full h-full flex flex-col items-center justify-center min-h-screen" id="game-shell">
+        <div class="game-layout">
+            <div class="game-viewport aero-glass md:rounded-[3rem] border-[3px] border-white/50 shadow-[0_25px_60px_-12px_rgba(0,51,102,0.3)] overflow-hidden flex flex-col">
+
+            <!-- Screens Content Area -->
+            <div class="relative flex-grow flex flex-col h-full overflow-hidden">
+
+                <!-- 1. Main Menu Screen -->
+                <section class="absolute inset-0 flex flex-col items-center justify-center p-8 z-10" id="screen-main-menu">
+                    <div class="text-center space-y-12">
+                        <div class="relative inline-block">
+                            <h2 class="font-display-lg text-[64px] md:text-[80px] text-primary-container font-extrabold italic drop-shadow-[0_5px_15px_rgba(0,174,239,0.5)] px-4 select-none">AeroBeat</h2>
+                            <div class="absolute -top-4 -right-8 water-drop opacity-90 scale-125"></div>
+                        </div>
+                        <div class="flex flex-col items-center gap-8">
+                            <button class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-16 py-6 rounded-full text-2xl shadow-xl hover:scale-105 active:scale-95 group">
+                                <span class="relative z-10 flex items-center gap-3">
+                                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                                    Load &amp; Play
+                                </span>
+                            </button>
+                            <div class="flex justify-center gap-8">
+                                <button class="glossy-button bg-gradient-to-b from-primary-container to-primary-fixed-variant/80 p-5 rounded-2xl hover:scale-110 active:scale-95 text-white">
+                                    <span class="material-symbols-outlined text-3xl">library_music</span>
+                                </button>
+                                <button class="glossy-button bg-gradient-to-b from-primary-container to-primary-fixed-variant/80 p-5 rounded-2xl hover:scale-110 active:scale-95 text-white">
+                                    <span class="material-symbols-outlined text-3xl">settings</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Loading Screen -->
+                <section class="hidden absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-primary-fixed/30 to-secondary-fixed/30 z-20" id="screen-loading">
+                    <div class="text-center space-y-8 w-full max-w-md">
+                        <p class="font-headline-md text-primary animate-pulse italic text-3xl">Analyzing Rhythm Wave...</p>
+                        <div class="h-12 w-full aero-glass rounded-full p-1.5 overflow-hidden border-2 border-white/80">
+                            <div class="h-full w-0 liquid-fill rounded-full transition-[width] duration-200 ease-out" id="loading-bar"></div>
+                        </div>
+                        <div class="flex justify-between font-label-sm text-primary/80 px-4 text-sm font-bold tracking-wider">
+                            <span>MP3 ENGINE READY</span>
+                            <span>128 BPM DETECTED</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Gameplay Screen -->
+                <section class="hidden absolute inset-0 flex flex-col z-30" id="screen-gameplay">
+                    <!-- HUD -->
+                    <div class="flex justify-between p-8 items-start relative z-20">
+                        <div class="aero-glass rounded-2xl px-8 py-4 flex flex-col shadow-inner border border-white/60">
+                            <span class="font-label-sm text-primary/70 uppercase tracking-widest text-[10px]">Score</span>
+                            <span class="font-display-lg text-[36px] text-primary" id="score-display">00000</span>
+                        </div>
+                        <div class="flex flex-col items-center mt-2">
+                            <div class="w-80 h-4 aero-glass rounded-full overflow-hidden border border-white/50">
+                                <div class="h-full w-1/3 liquid-fill"></div>
+                            </div>
+                            <span class="font-label-sm text-primary/80 mt-3 italic font-bold">Aero - Euphoria Journey</span>
+                        </div>
+                        <div class="aero-glass rounded-2xl px-8 py-4 flex flex-col shadow-inner items-end border border-white/60">
+                            <span class="font-label-sm text-secondary uppercase tracking-widest text-[10px]">Combo</span>
+                            <span class="font-display-lg text-[36px] text-secondary" id="combo-display">x0</span>
+                        </div>
+                    </div>
+
+                    <!-- Track Area -->
+                    <div class="flex-grow flex justify-center items-end pb-16 relative overflow-hidden">
+                        <!-- Perspective Track -->
+                        <div class="w-[500px] h-full bg-white/10 absolute bottom-0 flex justify-between px-6 border-x border-white/30" style="transform: perspective(600px) rotateX(45deg);">
+                            <div class="w-1.5 bg-white/40 h-full"></div>
+                            <div class="w-1.5 bg-white/40 h-full"></div>
+                            <div class="w-1.5 bg-white/40 h-full"></div>
+                            <div class="w-1.5 bg-white/40 h-full"></div>
+                            <div class="w-1.5 bg-white/40 h-full"></div>
+                        </div>
+
+                        <!-- Receptor Glass Wells -->
+                        <div class="relative z-10 flex gap-12" id="receptors">
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="receptor" data-lane="0">
+                                    <span class="font-display-lg text-3xl text-primary/50">D</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="receptor" data-lane="1">
+                                    <span class="font-display-lg text-3xl text-primary/50">F</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="receptor" data-lane="2">
+                                    <span class="font-display-lg text-3xl text-primary/50">J</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="receptor" data-lane="3">
+                                    <span class="font-display-lg text-3xl text-primary/50">K</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes Container (gameplay notes will be spawned here) -->
+                        <div id="notes-container" class="absolute inset-0 pointer-events-none overflow-hidden z-5"></div>
+                    </div>
+
+                    <!-- Stop Button -->
+                    <button class="absolute bottom-10 right-10 glossy-button bg-gradient-to-b from-red-400 to-red-600 p-5 rounded-full shadow-lg text-white hover:scale-110 active:scale-90">
+                        <span class="material-symbols-outlined text-3xl">stop</span>
+                    </button>
+
+                    <!-- Pause Overlay -->
+                    <div class="pause-overlay hidden" id="pause-overlay">
+                        <h2>Paused</h2>
+                        <div class="pause-actions">
+                            <button class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-10 py-4 rounded-full text-xl shadow-xl" id="pause-resume">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                                    Resume
+                                </span>
+                            </button>
+                            <button class="glossy-button bg-gradient-to-b from-red-400 to-red-600 text-white font-headline-md px-10 py-4 rounded-full text-xl shadow-xl" id="pause-quit">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <span class="material-symbols-outlined">logout</span>
+                                    Quit
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Countdown Overlay -->
+                    <div class="countdown-overlay hidden" id="countdown-overlay">
+                        <div class="countdown-ring"></div>
+                        <div class="countdown-number" data-value="3">3</div>
+                        <div class="countdown-number" data-value="2">2</div>
+                        <div class="countdown-number" data-value="1">1</div>
+                    </div>
+                </section>
+
+                <!-- 4. Results Screen -->
+                <section class="hidden absolute inset-0 flex items-center justify-center p-8 bg-black/20 z-40" id="screen-results">
+                    <div class="aero-glass w-full max-w-2xl rounded-[3rem] p-12 flex flex-col items-center text-center space-y-10 relative overflow-hidden border-2 border-white/70">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-60"></div>
+                        <div>
+                            <h3 class="font-display-lg text-primary-container text-5xl italic drop-shadow-md">Session Complete!</h3>
+                            <p class="font-label-sm text-primary/70 tracking-[0.2em] mt-3 font-bold">AERO - EUPHORIA JOURNEY</p>
+                        </div>
+                        <div class="flex gap-16 items-center">
+                            <div class="text-left space-y-4">
+                                <div class="flex justify-between w-64 font-body-lg"><span class="text-on-surface-variant font-medium">Perfect:</span> <span class="font-bold text-secondary text-2xl" id="result-perfect">0</span></div>
+                                <div class="flex justify-between w-64 font-body-lg"><span class="text-on-surface-variant font-medium">Good:</span> <span class="font-bold text-primary-container text-2xl" id="result-good">0</span></div>
+                                <div class="flex justify-between w-64 font-body-lg"><span class="text-on-surface-variant font-medium">Miss:</span> <span class="font-bold text-red-500 text-2xl" id="result-miss">0</span></div>
+                                <div class="flex justify-between w-64 font-body-lg border-t border-white/40 pt-4"><span class="text-on-surface-variant font-medium">Max Combo:</span> <span class="font-bold text-2xl" id="result-combo">0</span></div>
+                            </div>
+                            <div class="relative">
+                                <div class="text-[140px] font-display-lg font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-orange-400 to-yellow-600 drop-shadow-2xl" id="result-grade">S</div>
+                                <div class="absolute inset-0 blur-3xl bg-yellow-400/30 rounded-full -z-10"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center gap-4">
+                            <button class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-10 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95 hidden" id="publish-results-btn">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-xl">upload</span>
+                                    Publish your beatmap
+                                </span>
+                            </button>
+                            <button class="glossy-button bg-gradient-to-b from-primary-container to-primary text-white font-headline-md px-14 py-5 rounded-full shadow-xl text-xl hover:scale-105 active:scale-95" onclick="navigate('screen-main-menu')">
+                                Back to Orbit
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. Library Screen -->
+                <section class="hidden absolute inset-0 flex flex-col z-10" id="screen-library">
+                    <div class="flex justify-between items-center p-6 pb-2">
+                        <h3 class="font-display-lg text-3xl text-primary-container font-extrabold italic">Library</h3>
+                        <button class="glossy-button bg-gradient-to-b from-primary-container to-primary text-white font-headline-md px-6 py-2.5 rounded-full text-sm shadow-lg hover:scale-105 active:scale-95" id="library-back">
+                            <span class="relative z-10 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-lg">arrow_back</span>
+                                Back to menu
+                            </span>
+                        </button>
+                    </div>
+                    <div class="px-6 pb-2">
+                        <input type="text" id="library-search" placeholder="Search by title or artist..." class="w-full aero-glass rounded-full px-6 py-3 font-body-md text-on-surface placeholder-on-surface-variant/50 border border-white/50 focus:border-white/80 focus:outline-none transition-colors" />
+                    </div>
+                    <div class="flex-grow overflow-y-auto px-6 pb-6" id="library-scroll">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="library-grid"></div>
+                        <div class="hidden text-center py-16" id="library-empty">
+                            <span class="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">library_music</span>
+                            <p class="font-headline-md text-on-surface-variant/60 text-lg">No tracks published yet.</p>
+                            <p class="font-body-md text-on-surface-variant/40 mt-2">Upload a track and publish it!</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. Profile Screen -->
+                <section class="hidden absolute inset-0 flex flex-col z-10" id="screen-profile">
+                    <!-- Header + Back button -->
+                    <div class="flex justify-between items-center p-6 pb-2">
+                        <h3 class="font-display-lg text-3xl text-primary-container font-extrabold italic">Profile</h3>
+                        <button class="glossy-button bg-gradient-to-b from-primary-container to-primary text-white font-headline-md px-6 py-2.5 rounded-full text-sm shadow-lg hover:scale-105 active:scale-95" id="profile-back">
+                            <span class="relative z-10 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-lg">arrow_back</span>
+                                Back to menu
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Auth view (unauthenticated) -->
+                    <div class="flex-grow overflow-y-auto px-6 pb-6" id="profile-auth-view">
+                        <!-- Tabs -->
+                        <div class="flex gap-2 mb-6">
+                            <button class="glossy-button bg-gradient-to-b from-primary-container to-primary text-white font-headline-md px-8 py-2.5 rounded-full text-sm shadow-lg tab-active" id="tab-login">Login</button>
+                            <button class="glossy-button bg-gradient-to-b from-surface-container-high to-surface-container text-on-surface font-headline-md px-8 py-2.5 rounded-full text-sm shadow-lg tab-inactive" id="tab-register">Register</button>
+                        </div>
+
+                        <!-- Login Form -->
+                        <div class="aero-glass rounded-[2rem] p-8 border-2 border-white/60" id="login-form">
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Username</label>
+                                    <input type="text" id="login-username" required minlength="3" maxlength="20" autocomplete="off"
+                                        class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
+                                </div>
+                                <div>
+                                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Password</label>
+                                    <input type="password" id="login-password" required minlength="6" autocomplete="off"
+                                        class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
+                                </div>
+                                <button type="submit" class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-10 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95 w-full">
+                                    <span class="relative z-10">Login</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Register Form (hidden by default) -->
+                        <div class="aero-glass rounded-[2rem] p-8 border-2 border-white/60 hidden" id="register-form">
+                            <div class="space-y-5">
+                                <div>
+                                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Username</label>
+                                    <input type="text" id="register-username" required minlength="3" maxlength="20" autocomplete="off"
+                                        class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
+                                    <span class="font-label-sm text-on-surface-variant/50 text-[10px] mt-1 block">3–20 characters, letters, numbers, _ -</span>
+                                </div>
+                                <div>
+                                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Password</label>
+                                    <input type="password" id="register-password" required minlength="6" autocomplete="off"
+                                        class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
+                                    <span class="font-label-sm text-on-surface-variant/50 text-[10px] mt-1 block">Minimum 6 characters</span>
+                                </div>
+                                <div>
+                                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Email (optional)</label>
+                                    <input type="email" id="register-email" autocomplete="off"
+                                        class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
+                                </div>
+                                <button type="submit" class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-10 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95 w-full">
+                                    <span class="relative z-10">Create Account</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile view (authenticated) -->
+                    <div class="flex-grow overflow-y-auto px-6 pb-6 hidden" id="profile-user-view">
+                        <!-- User info card -->
+                        <div class="aero-glass rounded-[2rem] p-8 border-2 border-white/60 mb-6">
+                            <div class="flex items-center gap-6">
+                                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-container to-secondary flex items-center justify-center shrink-0">
+                                    <span class="font-display-lg text-4xl text-white" id="profile-avatar-letter">P</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <h2 class="font-display-lg text-2xl text-on-surface truncate" id="profile-display-name">Player</h2>
+                                    <p class="font-body-md text-on-surface-variant" id="profile-username">@player</p>
+                                    <p class="font-label-sm text-on-surface-variant/50" id="profile-joined"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logout button -->
+                        <button class="glossy-button bg-gradient-to-b from-red-400 to-red-600 text-white font-headline-md px-10 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95 w-full mt-6" id="profile-logout">
+                            <span class="relative z-10 flex items-center gap-2 justify-center">
+                                <span class="material-symbols-outlined text-xl">logout</span>
+                                Logout
+                            </span>
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Bottom NavBar -->
+            <footer class="relative w-full z-50 flex justify-around items-center h-24 px-8 pb-2 bg-white/25 backdrop-blur-3xl border-t border-white/50">
+                <div class="flex flex-col items-center justify-center">
+                    <button class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                    </button>
+                    <span class="font-label-sm text-[10px] uppercase tracking-widest mt-1.5 font-bold text-secondary">Play</span>
+                </div>
+                <div class="flex flex-col items-center justify-center group cursor-pointer">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-full text-on-surface/60 group-hover:bg-white/40 group-hover:text-primary transition-all">
+                        <span class="material-symbols-outlined text-3xl">library_music</span>
+                    </div>
+                    <span class="font-label-sm text-[10px] uppercase tracking-widest mt-1 text-on-surface/60 group-hover:text-primary">Library</span>
+                </div>
+                <div class="flex flex-col items-center justify-center group cursor-pointer">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-full text-on-surface/60 group-hover:bg-white/40 group-hover:text-primary transition-all">
+                        <span class="material-symbols-outlined text-3xl">group</span>
+                    </div>
+                    <span class="font-label-sm text-[10px] uppercase tracking-widest mt-1 text-on-surface/60 group-hover:text-primary">Social</span>
+                </div>
+                <div class="flex flex-col items-center justify-center group cursor-pointer">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-full text-on-surface/60 group-hover:bg-white/40 group-hover:text-primary transition-all">
+                        <span class="material-symbols-outlined text-3xl">person</span>
+                    </div>
+                    <span class="font-label-sm text-[10px] uppercase tracking-widest mt-1 text-on-surface/60 group-hover:text-primary">Profile</span>
+                </div>
+            </footer>
+
+        </div>
+        </div>
+    </main>
+
+    <!-- Application Script -->
+    <script type="module" src="js/app.js"></script>
+
+    <!-- Publish Form Modal -->
+    <div class="hidden fixed inset-0 z-[9000] items-center justify-center bg-black/40 backdrop-blur-sm" id="publish-modal">
+        <div class="aero-glass w-full max-w-lg rounded-[2rem] p-8 mx-4 border-2 border-white/60 shadow-2xl relative">
+            <button class="absolute top-4 right-4 text-on-surface-variant/60 hover:text-on-surface transition-colors" id="publish-close">
+                <span class="material-symbols-outlined text-2xl">close</span>
+            </button>
+            <h3 class="font-display-lg text-2xl text-primary-container font-extrabold italic mb-6">Publish Track</h3>
+            <form id="publish-form" class="space-y-5">
+                <div>
+                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Track Title</label>
+                    <input type="text" id="publish-title" required minlength="1" class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
+                </div>
+                <div>
+                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Artist</label>
+                    <input type="text" id="publish-artist" required minlength="1" class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">BPM</label>
+                        <input type="text" id="publish-bpm" readonly class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface/60 border border-white/30 bg-white/10 cursor-not-allowed" />
+                    </div>
+                    <div class="flex-1">
+                        <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Duration</label>
+                        <input type="text" id="publish-duration" readonly class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface/60 border border-white/30 bg-white/10 cursor-not-allowed" />
+                    </div>
+                    <div class="flex-1">
+                        <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Notes</label>
+                        <input type="text" id="publish-note-count" readonly class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface/60 border border-white/30 bg-white/10 cursor-not-allowed" />
+                    </div>
+                </div>
+                <div class="hidden" id="publish-progress">
+                    <div class="h-3 w-full aero-glass rounded-full p-1 overflow-hidden border border-white/50">
+                        <div class="h-full w-full liquid-fill rounded-full animate-pulse"></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 pt-2">
+                    <button type="submit" class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-10 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95 flex-1" id="publish-submit">
+                        <span class="relative z-10">Publish</span>
+                    </button>
+                    <button type="button" class="font-body-md text-on-surface-variant hover:text-on-surface transition-colors px-4 py-3" id="publish-cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Conflict Dialog -->
+    <div class="hidden fixed inset-0 z-[9001] items-center justify-center bg-black/40 backdrop-blur-sm" id="publish-conflict-dialog">
+        <div class="aero-glass w-full max-w-md rounded-[2rem] p-8 mx-4 border-2 border-white/60 shadow-2xl text-center space-y-6">
+            <span class="material-symbols-outlined text-5xl text-yellow-500">warning</span>
+            <p class="font-body-lg text-on-surface conflict-message">This track already exists. Play it instead?</p>
+            <div class="flex gap-4 justify-center">
+                <button class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-8 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95" id="conflict-play">
+                    <span class="relative z-10 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Play
+                    </span>
+                </button>
+                <button class="font-body-md text-on-surface-variant hover:text-on-surface transition-colors px-6 py-3" id="conflict-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
