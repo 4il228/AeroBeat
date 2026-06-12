@@ -42,8 +42,9 @@ export function initProfile(auth) {
 
     // ── Login form submit ──────────────────────────────────────────
     const loginFormEl = document.getElementById('login-form');
-    if (loginFormEl) {
-        loginFormEl.addEventListener('submit', async (e) => {
+    const loginSubmitBtn = loginFormEl?.querySelector('button[type="submit"]');
+    if (loginFormEl && loginSubmitBtn) {
+        loginSubmitBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             const username = document.getElementById('login-username')?.value?.trim();
             const password = document.getElementById('login-password')?.value;
@@ -65,8 +66,9 @@ export function initProfile(auth) {
 
     // ── Register form submit ───────────────────────────────────────
     const registerFormEl = document.getElementById('register-form');
-    if (registerFormEl) {
-        registerFormEl.addEventListener('submit', async (e) => {
+    const registerSubmitBtn = registerFormEl?.querySelector('button[type="submit"]');
+    if (registerFormEl && registerSubmitBtn) {
+        registerSubmitBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             const username = document.getElementById('register-username')?.value?.trim();
             const password = document.getElementById('register-password')?.value;
