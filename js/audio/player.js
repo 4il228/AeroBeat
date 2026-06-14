@@ -49,6 +49,16 @@ export class AudioPlayer {
     }
 
     /**
+     * Load a pre-decoded AudioBuffer directly.
+     * @param {AudioBuffer} audioBuffer - Already decoded audio buffer.
+     */
+    loadBuffer(audioBuffer) {
+        this.init();
+        this.buffer = audioBuffer;
+        this.pauseOffset = 0;
+    }
+
+    /**
      * Start or resume playback.
      */
     async play() {

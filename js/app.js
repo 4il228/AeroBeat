@@ -6,6 +6,7 @@
 
 import { AudioPlayer } from './audio/player.js';
 import { MenuMusicPlayer } from './audio/menuMusic.js';
+import { buildBeatmap } from './audio/beatmapBuilder.js';
 import { initReceptors, getLaneX } from './game/receptor.js';
 import { initNotes } from './game/note.js';
 import { createConductor } from './game/conductor.js';
@@ -62,10 +63,20 @@ async function handleFileLoad(file) {
     currentFile = file;
 
     try {
-        // TODO: plug in new analyzer here — set currentBeatmap before starting gameplay
-        currentBeatmap = null;
+        // Decode audio once for both beatmap builder and player
+        audioPlayer.init();
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioPlayer.ctx.decodeAudioData(arrayBuffer);
 
-        await audioPlayer.load(file);
+        setLoadingProgress(0.05);
+
+        // Build beatmap with progress tracking
+        currentBeatmap = await buildBeatmap(audioBuffer, (p) => {
+            setLoadingProgress(0.05 + p * 0.9);
+        });
+
+        // Load decoded buffer into player
+        audioPlayer.loadBuffer(audioBuffer);
 
         setLoadingProgress(1);
         startGameplay();
