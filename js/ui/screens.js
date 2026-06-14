@@ -41,11 +41,3 @@ export function navigate(screenId) {
         onLeaveGameplay();
     }
 }
-
-/**
- * Get the list of screen IDs.
- * @returns {string[]}
- */
-export function getScreenIds() {
-    return [...SCREEN_IDS];
-}

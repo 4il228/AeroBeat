@@ -35,14 +35,3 @@ export function setBpmLabel(text) {
         label.textContent = text;
     }
 }
-
-/**
- * Set the engine status label text on the loading screen.
- * @param {string} text - e.g. "MP3 ENGINE READY"
- */
-export function setEngineLabel(text) {
-    const label = document.querySelector('#screen-loading .flex span:first-child');
-    if (label) {
-        label.textContent = text;
-    }
-}

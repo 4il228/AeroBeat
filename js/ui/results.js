@@ -17,11 +17,15 @@ export function showResults(scoringState, beatmap, grade) {
     setTextContent('result-combo', scoringState.maxCombo.toString());
     setTextContent('result-grade', grade);
 
-    // Update song title on results
+    // Update song info on results
     if (beatmap) {
         const titleEl = document.querySelector('#screen-results .font-label-sm');
         if (titleEl) {
             titleEl.textContent = beatmap.metadata.title.toUpperCase();
+        }
+        const artistEl = document.getElementById('results-artist');
+        if (artistEl && beatmap.metadata.artist) {
+            artistEl.textContent = beatmap.metadata.artist.toUpperCase();
         }
     }
 }

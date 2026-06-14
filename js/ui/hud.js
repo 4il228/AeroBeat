@@ -47,12 +47,3 @@ export function setSongTitle(title) {
         el.textContent = title;
     }
 }
-
-/**
- * Reset HUD to default state.
- */
-export function resetHud() {
-    updateScore(0);
-    updateCombo(0);
-    updateProgress(0);
-}

@@ -49,17 +49,6 @@ export class AudioPlayer {
     }
 
     /**
-     * Load audio from an ArrayBuffer (e.g. fetched from server URL).
-     * @param {ArrayBuffer} arrayBuffer - Raw audio data.
-     * @returns {Promise<void>}
-     */
-    async loadFromBuffer(arrayBuffer) {
-        this.init();
-        this.buffer = await this.ctx.decodeAudioData(arrayBuffer);
-        this.pauseOffset = 0;
-    }
-
-    /**
      * Start or resume playback.
      */
     async play() {
@@ -164,17 +153,5 @@ export class AudioPlayer {
      */
     get volume() {
         return this._volume;
-    }
-
-    /**
-     * Destroy player and release resources.
-     */
-    destroy() {
-        if (this.source) {
-            try { this.source.stop(); } catch (e) { /* already stopped */ }
-        }
-        if (this.ctx) {
-            this.ctx.close();
-        }
     }
 }

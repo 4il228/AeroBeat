@@ -113,10 +113,4 @@ export function clearAllNotes() {
     }
 }
 
-/**
- * Get the number of currently active notes.
- * @returns {number}
- */
-export function activeNoteCount() {
-    return active.size;
-}
+

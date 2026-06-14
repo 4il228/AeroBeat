@@ -7,16 +7,16 @@
 import { AudioPlayer } from './audio/player.js';
 import { MenuMusicPlayer } from './audio/menuMusic.js';
 import { generateBeatmap } from './audio/analyzer.js';
-import { initReceptors, getLaneX, getReceptorY, flashReceptor } from './game/receptor.js';
+import { initReceptors, getLaneX } from './game/receptor.js';
 import { initNotes } from './game/note.js';
 import { createConductor } from './game/conductor.js';
-import { categorizeHit, isHitValid, INPUT_IGNORE_THRESHOLD } from './game/hitDetection.js';
-import { createScoringState, processHit, calculateAccuracy, determineGrade, formatScore } from './game/scoring.js';
+import { categorizeHit, isHitValid } from './game/hitDetection.js';
+import { createScoringState, processHit, calculateAccuracy, determineGrade } from './game/scoring.js';
 
 import { navigate, setOnLeaveGameplay } from './ui/screens.js';
 import { createBubbles, setupFileInput, setupDragDrop } from './ui/menu.js';
 import { resetProgress, updateProgress as setLoadingProgress, setBpmLabel } from './ui/loading.js';
-import { updateScore, updateCombo, updateProgress as setGameProgress, setSongTitle, resetHud } from './ui/hud.js';
+import { updateScore, updateCombo, updateProgress as setGameProgress, setSongTitle } from './ui/hud.js';
 import { showResults } from './ui/results.js';
 import { showToast } from './ui/notifications.js';
 import { createVolumeControl } from './ui/volumeControl.js';
@@ -483,50 +483,18 @@ document.addEventListener('DOMContentLoaded', () => {
         menuMusic.volume = v;
     });
 
-    // Load menu music and try to auto-play immediately
-    menuMusic.load('assets/audio/main-theme.mp3').then(async () => {
-        if (menuMusicStarted) return;
-        menuMusicStarted = true;
-        removeMenuMusicListeners();
-        await menuMusic.fadeIn(2.0);
-
-        // If context was suspended (autoplay blocked), resume on first gesture
-        if (menuMusic.ctx && menuMusic.ctx.state === 'suspended') {
-            const resumeOnGesture = async () => {
-                document.removeEventListener('click', resumeOnGesture);
-                document.removeEventListener('keydown', resumeOnGesture);
-                document.removeEventListener('touchstart', resumeOnGesture);
-                document.removeEventListener('pointerdown', resumeOnGesture);
-                await menuMusic.ctx.resume();
-                menuMusic.fadeIn(0.5);
-            };
-            document.addEventListener('click', resumeOnGesture);
-            document.addEventListener('keydown', resumeOnGesture);
-            document.addEventListener('touchstart', resumeOnGesture);
-            document.addEventListener('pointerdown', resumeOnGesture);
-        }
-    }).catch(err => {
+    // Load menu music and auto-play on first user interaction (autoplay policy)
+    menuMusic.load('assets/audio/main-theme.mp3').catch(err => {
         console.warn('Menu music failed to load:', err);
     });
-
-    function removeMenuMusicListeners() {
-        document.removeEventListener('click', startMenuMusic);
-        document.removeEventListener('keydown', startMenuMusic);
-        document.removeEventListener('touchstart', startMenuMusic);
-        document.removeEventListener('pointerdown', startMenuMusic);
-    }
 
     const startMenuMusic = async () => {
         if (menuMusicStarted) return;
         menuMusicStarted = true;
-        removeMenuMusicListeners();
-        await menuMusic.load('assets/audio/main-theme.mp3');
+        document.removeEventListener('click', startMenuMusic);
         await menuMusic.fadeIn(2.0);
     };
     document.addEventListener('click', startMenuMusic);
-    document.addEventListener('keydown', startMenuMusic);
-    document.addEventListener('touchstart', startMenuMusic);
-    document.addEventListener('pointerdown', startMenuMusic);
 
     // Stop conductor when leaving gameplay screen
     setOnLeaveGameplay(() => {

@@ -232,9 +232,8 @@ export async function generateBeatmap(file, onProgress) {
         const hiRMS = computeRMS(bands.hi, sr, WINDOW_SIZE, HOP_SIZE);
         if (onProgress) onProgress(0.5);
 
-        const smoothKick = kickRMS.energy.slice();
         const effSR = sr / HOP_SIZE;
-        const bpm = detectBPM(smoothKick, effSR);
+        const bpm = detectBPM(kickRMS.energy, effSR);
         if (onProgress) onProgress(0.7);
 
         const notes = buildBeatmap(kickRMS, midRMS, snareRMS, hiRMS);

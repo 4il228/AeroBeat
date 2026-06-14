@@ -299,25 +299,6 @@ body {
 }
 
 /* ============================================================
-   Screen Containers
-   ============================================================ */
-
-.screen {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    z-index: 10;
-}
-
-.screen.hidden {
-    display: none;
-}
-
-/* ============================================================
    Note Object (for gameplay)
    ============================================================ */
 

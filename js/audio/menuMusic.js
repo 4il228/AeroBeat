@@ -140,18 +140,6 @@ export class MenuMusicPlayer {
     }
 
     /**
-     * Immediately stop and silence the music.
-     */
-    stop() {
-        if (this.source && this.playing) {
-            this.fadeGain.gain.cancelScheduledValues(this.ctx.currentTime);
-            this.fadeGain.gain.value = 0;
-            try { this.source.stop(); } catch (e) { /* already stopped */ }
-            this.playing = false;
-        }
-    }
-
-    /**
      * Get current effective volume level.
      * @type {number}
      */
@@ -169,26 +157,5 @@ export class MenuMusicPlayer {
             this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
             this.masterGain.gain.setValueAtTime(this._masterVolume, this.ctx.currentTime);
         }
-    }
-
-    /**
-     * Get master volume level.
-     * @type {number}
-     */
-    get masterVolume() {
-        return this._masterVolume;
-    }
-
-    /**
-     * Destroy player and release all resources.
-     */
-    destroy() {
-        this.stop();
-        if (this.ctx) {
-            this.ctx.close();
-            this.ctx = null;
-        }
-        this.initialized = false;
-        this.buffer = null;
     }
 }

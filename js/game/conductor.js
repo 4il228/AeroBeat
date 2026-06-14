@@ -9,8 +9,8 @@
  * then music and falling start simultaneously and in sync.
  */
 
-import { spawnNote, updateNotePosition, despawnNote, getActiveNote, clearAllNotes, activeNoteCount } from './note.js';
-import { flashReceptor, getLaneX, getReceptorY, clearAllFlashes } from './receptor.js';
+import { spawnNote, updateNotePosition, despawnNote, getActiveNote, clearAllNotes } from './note.js';
+import { flashReceptor, getLaneX, getReceptorY } from './receptor.js';
 
 /** Time before hitTime when a note becomes visible (seconds) */
 const LEAD_TIME = 2.0;
@@ -231,15 +231,6 @@ export function createConductor({ beatmap, audioPlayer, notesContainer, receptor
         }
     }
 
-    function reset() {
-        stop();
-        inputEnabled = false;
-        processedNotes.clear();
-        visibleNotes.clear();
-        clearAllNotes();
-        clearAllFlashes();
-    }
-
     /**
      * Try to hit a note on a specific lane at the current audio time.
      * @param {number} lane - Lane index (0-3).
@@ -294,7 +285,6 @@ export function createConductor({ beatmap, audioPlayer, notesContainer, receptor
     return {
         start,
         stop,
-        reset,
         startFreeze,
         tryHit,
         markHit,

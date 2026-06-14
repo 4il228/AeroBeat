@@ -94,11 +94,6 @@ export class Auth {
         this._notify();
     }
 
-    /** @returns {boolean} Whether a user is currently logged in */
-    get isLoggedIn() {
-        return !!this.user;
-    }
-
     /**
      * Subscribe to auth state changes (login/logout).
      * @param {function(object|null): void} callback
@@ -110,13 +105,5 @@ export class Auth {
     /** Notify all listeners of auth state change */
     _notify() {
         this._listeners.forEach(cb => cb(this.user));
-    }
-
-    /**
-     * Authorization header for protected API requests.
-     * @returns {object} Headers object
-     */
-    get authHeader() {
-        return this.token ? { 'Authorization': `Bearer ${this.token}` } : {};
     }
 }
