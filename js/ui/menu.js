@@ -1,6 +1,6 @@
 /**
  * AeroBeat — Menu Module
- * Main menu setup: bubble atmosphere, file input wiring, drag & drop, library button.
+ * Main menu setup: bubble atmosphere, file input wiring, drag & drop.
  */
 
 /** Number of floating bubbles in the background */
@@ -88,30 +88,4 @@ export function setupDragDrop(onFileSelected) {
             onFileSelected(files[0]);
         }
     });
-}
-
-/**
- * Wire the Library button in the main menu to navigate to the library screen.
- * @param {function} onNavigate - navigate() function to switch screens.
- * @param {function} onBeforeNavigate - Callback before navigating (e.g. load library data).
- */
-export function setupLibraryButton(onNavigate, onBeforeNavigate) {
-    const buttons = document.querySelectorAll('#screen-main-menu .glossy-button');
-    // The Library button is the first icon button (library_music icon) after the "Load & Play" button
-    const libBtn = buttons[1];
-    if (libBtn) {
-        libBtn.addEventListener('click', async () => {
-            if (onBeforeNavigate) await onBeforeNavigate();
-            onNavigate('screen-library');
-        });
-    }
-
-    // Also wire the bottom nav bar Library icon
-    const navItems = document.querySelectorAll('footer .flex.flex-col');
-    if (navItems.length >= 2) {
-        navItems[1].addEventListener('click', async () => {
-            if (onBeforeNavigate) await onBeforeNavigate();
-            onNavigate('screen-library');
-        });
-    }
 }

@@ -10,7 +10,6 @@ const SCREEN_IDS = [
     'screen-loading',
     'screen-gameplay',
     'screen-results',
-    'screen-library',
     'screen-profile'
 ];
 

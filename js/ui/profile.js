@@ -127,14 +127,11 @@ function renderProfile(user) {
 
         // Fill profile data
         const displayName = user.display_name || user.username;
-        const initial = displayName.charAt(0).toUpperCase();
 
-        const avatarLetter = document.getElementById('profile-avatar-letter');
         const displayNameEl = document.getElementById('profile-display-name');
         const usernameEl = document.getElementById('profile-username');
         const joinedEl = document.getElementById('profile-joined');
 
-        if (avatarLetter) avatarLetter.textContent = initial;
         if (displayNameEl) displayNameEl.textContent = displayName;
         if (usernameEl) usernameEl.textContent = `@${user.username}`;
         if (joinedEl) {
@@ -145,47 +142,12 @@ function renderProfile(user) {
                 joinedEl.textContent = '';
             }
         }
-
-        // Update nav bar profile button
-        updateNavBarProfile(initial, true);
     } else {
         // Not logged in — show auth forms
         authView.classList.remove('hidden');
         userView.classList.add('hidden');
         resetLoginForm();
         resetRegisterForm();
-
-        // Update nav bar profile button
-        updateNavBarProfile(null, false);
-    }
-}
-
-/**
- * Update the profile button in the bottom nav bar.
- * Shows first letter of username when logged in, person icon when not.
- * @param {string|null} initial
- * @param {boolean} loggedIn
- */
-function updateNavBarProfile(initial, loggedIn) {
-    const navItems = document.querySelectorAll('footer .flex.flex-col');
-    if (navItems.length < 4) return;
-
-    const profileItem = navItems[3];
-    const iconContainer = profileItem.querySelector('.w-12');
-    const label = profileItem.querySelector('span:last-child');
-
-    if (!iconContainer || !label) return;
-
-    if (loggedIn && initial) {
-        iconContainer.innerHTML = `<span class="font-display-lg text-lg text-white font-bold">${initial}</span>`;
-        iconContainer.className = 'w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-container to-secondary transition-all';
-        label.textContent = 'Profile';
-        label.className = 'font-label-sm text-[10px] uppercase tracking-widest mt-1 text-primary font-bold';
-    } else {
-        iconContainer.innerHTML = '<span class="material-symbols-outlined text-3xl">person</span>';
-        iconContainer.className = 'w-12 h-12 flex items-center justify-center rounded-full text-on-surface/60 group-hover:bg-white/40 group-hover:text-primary transition-all';
-        label.textContent = 'Profile';
-        label.className = 'font-label-sm text-[10px] uppercase tracking-widest mt-1 text-on-surface/60 group-hover:text-primary';
     }
 }
 

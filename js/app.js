@@ -14,14 +14,12 @@ import { categorizeHit, isHitValid, INPUT_IGNORE_THRESHOLD } from './game/hitDet
 import { createScoringState, processHit, calculateAccuracy, determineGrade, formatScore } from './game/scoring.js';
 
 import { navigate, setOnLeaveGameplay } from './ui/screens.js';
-import { createBubbles, setupFileInput, setupDragDrop, setupLibraryButton } from './ui/menu.js';
+import { createBubbles, setupFileInput, setupDragDrop } from './ui/menu.js';
 import { resetProgress, updateProgress as setLoadingProgress, setBpmLabel } from './ui/loading.js';
 import { updateScore, updateCombo, updateProgress as setGameProgress, setSongTitle, resetHud } from './ui/hud.js';
 import { showResults } from './ui/results.js';
 import { showToast } from './ui/notifications.js';
 import { createVolumeControl } from './ui/volumeControl.js';
-import { initPublishForm, openPublishForm } from './ui/publishForm.js';
-import { initLibrary, loadLibrary } from './ui/library.js';
 import { Auth } from './auth/auth.js';
 import { initProfile } from './ui/profile.js';
 
@@ -39,7 +37,7 @@ let menuMusicStarted = false;
 /** @type {object|null} */
 let currentBeatmap = null;
 
-/** @type {File|null} Current locally-loaded audio file (null if track is from Library) */
+/** @type {File|null} Current locally-loaded audio file */
 let currentFile = null;
 
 /** @type {object|null} */
@@ -76,6 +74,7 @@ async function handleFileLoad(file) {
         startGameplay();
     } catch (err) {
         navigate('screen-main-menu');
+        menuMusic.fadeIn(1.5);
         showToast(err.message || 'Failed to load audio file');
     }
 }
@@ -151,18 +150,9 @@ function handleGameEnd() {
 
     showResults(scoringState, currentBeatmap, grade);
 
-    // Show publish button only for locally loaded files (not from Library)
-    const publishBtn = document.getElementById('publish-results-btn');
-    if (publishBtn) {
-        if (currentFile) {
-            publishBtn.classList.remove('hidden');
-        } else {
-            publishBtn.classList.add('hidden');
-        }
-    }
-
     setTimeout(() => {
         navigate('screen-results');
+        menuMusic.fadeIn(1.5);
     }, 800);
 }
 
@@ -346,47 +336,6 @@ function spawnParticles(x, y, color, count) {
 }
 
 /**
- * Handle playing a track from the Library.
- * Fetches beatmap + audio from server, starts gameplay.
- * @param {number} trackId
- */
-async function handleLibraryPlay(trackId) {
-    navigate('screen-loading');
-    menuMusic.fadeOut(1.5);
-    resetProgress();
-    currentFile = null; // Library tracks have no local file
-
-    try {
-        // Fetch track data including beatmap
-        const res = await fetch(`http://localhost:3000/api/tracks/${trackId}`);
-        if (!res.ok) throw new Error('Track not found');
-        const trackData = await res.json();
-
-        currentBeatmap = trackData.beatmap;
-        if (!currentBeatmap) throw new Error('Beatmap data missing');
-
-        setBpmLabel(`${currentBeatmap.metadata.bpm} BPM DETECTED`);
-        setLoadingProgress(0.5);
-
-        // Fetch audio file from server
-        const audioUrl = `http://localhost:3000/${trackData.file_path}`;
-        const audioRes = await fetch(audioUrl);
-        if (!audioRes.ok) throw new Error('Failed to load audio file');
-        const arrayBuffer = await audioRes.arrayBuffer();
-
-        setLoadingProgress(0.8);
-
-        await audioPlayer.loadFromBuffer(arrayBuffer);
-
-        setLoadingProgress(1.0);
-        startGameplay();
-    } catch (err) {
-        navigate('screen-main-menu');
-        showToast(err.message || 'Failed to load track from library');
-    }
-}
-
-/**
  * Handle keyboard input for gameplay.
  * @param {KeyboardEvent} e
  */
@@ -465,32 +414,33 @@ function setupButtons() {
 const _originalNavigate = navigate;
 window.navigate = function(screenId) {
     _originalNavigate(screenId);
-    if (screenId === 'screen-main-menu') {
+    if (screenId === 'screen-gameplay' || screenId === 'screen-loading') {
+        menuMusic.fadeOut(1.5);
+    } else if (menuMusicStarted && menuMusic.buffer) {
         menuMusic.fadeIn(1.5);
     }
 };
 
+// Expose showToast for inline onclick handlers
+window.showToast = showToast;
+
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Button click sound effect
+    const clickSfx = new Audio('assets/audio/click-sfx.mp3');
+    clickSfx.volume = 0.5;
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('button, .glossy-button, [role="button"], footer .flex.flex-col')) {
+            clickSfx.currentTime = 0;
+            clickSfx.play().catch(() => {});
+        }
+    });
+
     createBubbles();
     setupFileInput(handleFileLoad);
     setupDragDrop(handleFileLoad);
     setupKeyboard();
     setupButtons();
-
-    // Initialize publish form — on success navigate to library
-    initPublishForm(() => {
-        navigate('screen-library');
-        loadLibrary();
-    });
-
-    // Initialize library — wire play callback
-    initLibrary(handleLibraryPlay);
-
-    // Wire Library button in main menu
-    setupLibraryButton(window.navigate, async () => {
-        await loadLibrary();
-    });
 
     // Initialize auth
     const auth = new Auth();
@@ -502,24 +452,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const navItems = document.querySelectorAll('footer .flex.flex-col');
     if (navItems.length >= 4) {
         // Play button (index 0) — already works via global navigate
-        // Library button (index 1) — wired in menu.js
-        // Social button (index 2) — stub
+        // Library button (index 1) — handled via inline onclick
+        // Social button (index 2)
         navItems[2].addEventListener('click', () => {
             showToast('Coming soon!');
         });
         // Profile button (index 3)
         navItems[3].addEventListener('click', () => {
             window.navigate('screen-profile');
-        });
-    }
-
-    // Wire publish button on results screen
-    const publishResultsBtn = document.getElementById('publish-results-btn');
-    if (publishResultsBtn) {
-        publishResultsBtn.addEventListener('click', () => {
-            if (currentFile && currentBeatmap) {
-                openPublishForm(currentFile, currentBeatmap);
-            }
         });
     }
 
@@ -543,19 +483,50 @@ document.addEventListener('DOMContentLoaded', () => {
         menuMusic.volume = v;
     });
 
-    // Load menu music and auto-play on first user interaction
-    menuMusic.load('assets/audio/main-theme.mp3').catch(err => {
+    // Load menu music and try to auto-play immediately
+    menuMusic.load('assets/audio/main-theme.mp3').then(async () => {
+        if (menuMusicStarted) return;
+        menuMusicStarted = true;
+        removeMenuMusicListeners();
+        await menuMusic.fadeIn(2.0);
+
+        // If context was suspended (autoplay blocked), resume on first gesture
+        if (menuMusic.ctx && menuMusic.ctx.state === 'suspended') {
+            const resumeOnGesture = async () => {
+                document.removeEventListener('click', resumeOnGesture);
+                document.removeEventListener('keydown', resumeOnGesture);
+                document.removeEventListener('touchstart', resumeOnGesture);
+                document.removeEventListener('pointerdown', resumeOnGesture);
+                await menuMusic.ctx.resume();
+                menuMusic.fadeIn(0.5);
+            };
+            document.addEventListener('click', resumeOnGesture);
+            document.addEventListener('keydown', resumeOnGesture);
+            document.addEventListener('touchstart', resumeOnGesture);
+            document.addEventListener('pointerdown', resumeOnGesture);
+        }
+    }).catch(err => {
         console.warn('Menu music failed to load:', err);
     });
+
+    function removeMenuMusicListeners() {
+        document.removeEventListener('click', startMenuMusic);
+        document.removeEventListener('keydown', startMenuMusic);
+        document.removeEventListener('touchstart', startMenuMusic);
+        document.removeEventListener('pointerdown', startMenuMusic);
+    }
 
     const startMenuMusic = async () => {
         if (menuMusicStarted) return;
         menuMusicStarted = true;
-        document.removeEventListener('click', startMenuMusic);
-        await menuMusic.play();
-        menuMusic.fadeIn(2.0);
+        removeMenuMusicListeners();
+        await menuMusic.load('assets/audio/main-theme.mp3');
+        await menuMusic.fadeIn(2.0);
     };
     document.addEventListener('click', startMenuMusic);
+    document.addEventListener('keydown', startMenuMusic);
+    document.addEventListener('touchstart', startMenuMusic);
+    document.addEventListener('pointerdown', startMenuMusic);
 
     // Stop conductor when leaving gameplay screen
     setOnLeaveGameplay(() => {

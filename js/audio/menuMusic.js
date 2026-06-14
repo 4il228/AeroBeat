@@ -99,12 +99,6 @@ export class MenuMusicPlayer {
         this.source.buffer = this.buffer;
         this.source.loop = true;
         this.source.connect(this.masterGain);
-
-        this.source.onended = () => {
-            if (this.playing) {
-                this.playing = false;
-            }
-        };
     }
 
     /**
@@ -112,17 +106,17 @@ export class MenuMusicPlayer {
      * @param {number} [duration=DEFAULT_FADE_DURATION] - Fade duration in seconds.
      * @param {number} [targetVolume=DEFAULT_VOLUME] - Target volume (0-1).
      */
-    fadeIn(duration = DEFAULT_FADE_DURATION, targetVolume = DEFAULT_VOLUME) {
+    async fadeIn(duration = DEFAULT_FADE_DURATION, targetVolume = DEFAULT_VOLUME) {
         if (!this.initialized || !this.buffer) return;
 
         this.targetVolume = targetVolume;
 
-        if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
+        if (!this.playing) {
+            await this.play();
         }
 
-        if (!this.playing) {
-            this.play();
+        if (this.ctx.state === 'suspended') {
+            await this.ctx.resume();
         }
 
         const now = this.ctx.currentTime;
@@ -133,6 +127,7 @@ export class MenuMusicPlayer {
 
     /**
      * Fade out the menu music to silence.
+     * Source keeps looping silently — fadeIn will ramp gain back seamlessly.
      * @param {number} [duration=DEFAULT_FADE_DURATION] - Fade duration in seconds.
      */
     fadeOut(duration = DEFAULT_FADE_DURATION) {
@@ -142,15 +137,6 @@ export class MenuMusicPlayer {
         this.fadeGain.gain.cancelScheduledValues(now);
         this.fadeGain.gain.setValueAtTime(this.fadeGain.gain.value, now);
         this.fadeGain.gain.linearRampToValueAtTime(0, now + duration);
-
-        // Stop source after fade completes to free resources
-        const fadeEndTimeout = duration * 1000 + 50;
-        setTimeout(() => {
-            if (this.source && this.playing) {
-                try { this.source.stop(); } catch (e) { /* already stopped */ }
-                this.playing = false;
-            }
-        }, fadeEndTimeout);
     }
 
     /**

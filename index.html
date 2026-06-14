@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>AeroBeat - Rhythm Experience</title>
+    <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -141,14 +142,6 @@
                                     Load &amp; Play
                                 </span>
                             </button>
-                            <div class="flex justify-center gap-8">
-                                <button class="glossy-button bg-gradient-to-b from-primary-container to-primary-fixed-variant/80 p-5 rounded-2xl hover:scale-110 active:scale-95 text-white">
-                                    <span class="material-symbols-outlined text-3xl">library_music</span>
-                                </button>
-                                <button class="glossy-button bg-gradient-to-b from-primary-container to-primary-fixed-variant/80 p-5 rounded-2xl hover:scale-110 active:scale-95 text-white">
-                                    <span class="material-symbols-outlined text-3xl">settings</span>
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </section>
@@ -280,12 +273,6 @@
                             </div>
                         </div>
                         <div class="flex flex-col items-center gap-4">
-                            <button class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-10 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95 hidden" id="publish-results-btn">
-                                <span class="relative z-10 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-xl">upload</span>
-                                    Publish your beatmap
-                                </span>
-                            </button>
                             <button class="glossy-button bg-gradient-to-b from-primary-container to-primary text-white font-headline-md px-14 py-5 rounded-full shadow-xl text-xl hover:scale-105 active:scale-95" onclick="navigate('screen-main-menu')">
                                 Back to Orbit
                             </button>
@@ -293,31 +280,7 @@
                     </div>
                 </section>
 
-                <!-- 5. Library Screen -->
-                <section class="hidden absolute inset-0 flex flex-col z-10" id="screen-library">
-                    <div class="flex justify-between items-center p-6 pb-2">
-                        <h3 class="font-display-lg text-3xl text-primary-container font-extrabold italic">Library</h3>
-                        <button class="glossy-button bg-gradient-to-b from-primary-container to-primary text-white font-headline-md px-6 py-2.5 rounded-full text-sm shadow-lg hover:scale-105 active:scale-95" id="library-back">
-                            <span class="relative z-10 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-lg">arrow_back</span>
-                                Back to menu
-                            </span>
-                        </button>
-                    </div>
-                    <div class="px-6 pb-2">
-                        <input type="text" id="library-search" placeholder="Search by title or artist..." class="w-full aero-glass rounded-full px-6 py-3 font-body-md text-on-surface placeholder-on-surface-variant/50 border border-white/50 focus:border-white/80 focus:outline-none transition-colors" />
-                    </div>
-                    <div class="flex-grow overflow-y-auto px-6 pb-6" id="library-scroll">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="library-grid"></div>
-                        <div class="hidden text-center py-16" id="library-empty">
-                            <span class="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">library_music</span>
-                            <p class="font-headline-md text-on-surface-variant/60 text-lg">No tracks published yet.</p>
-                            <p class="font-body-md text-on-surface-variant/40 mt-2">Upload a track and publish it!</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 6. Profile Screen -->
+                <!-- 5. Profile Screen -->
                 <section class="hidden absolute inset-0 flex flex-col z-10" id="screen-profile">
                     <!-- Header + Back button -->
                     <div class="flex justify-between items-center p-6 pb-2">
@@ -390,7 +353,7 @@
                         <div class="aero-glass rounded-[2rem] p-8 border-2 border-white/60 mb-6">
                             <div class="flex items-center gap-6">
                                 <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-container to-secondary flex items-center justify-center shrink-0">
-                                    <span class="font-display-lg text-4xl text-white" id="profile-avatar-letter">P</span>
+                                    <span class="material-symbols-outlined text-4xl text-white">person</span>
                                 </div>
                                 <div class="min-w-0">
                                     <h2 class="font-display-lg text-2xl text-on-surface truncate" id="profile-display-name">Player</h2>
@@ -420,7 +383,7 @@
                     </button>
                     <span class="font-label-sm text-[10px] uppercase tracking-widest mt-1.5 font-bold text-secondary">Play</span>
                 </div>
-                <div class="flex flex-col items-center justify-center group cursor-pointer">
+                <div class="flex flex-col items-center justify-center group cursor-pointer" onclick="showToast('Coming soon!')">
                     <div class="w-12 h-12 flex items-center justify-center rounded-full text-on-surface/60 group-hover:bg-white/40 group-hover:text-primary transition-all">
                         <span class="material-symbols-outlined text-3xl">library_music</span>
                     </div>
@@ -446,67 +409,5 @@
 
     <!-- Application Script -->
     <script type="module" src="js/app.js"></script>
-
-    <!-- Publish Form Modal -->
-    <div class="hidden fixed inset-0 z-[9000] items-center justify-center bg-black/40 backdrop-blur-sm" id="publish-modal">
-        <div class="aero-glass w-full max-w-lg rounded-[2rem] p-8 mx-4 border-2 border-white/60 shadow-2xl relative">
-            <button class="absolute top-4 right-4 text-on-surface-variant/60 hover:text-on-surface transition-colors" id="publish-close">
-                <span class="material-symbols-outlined text-2xl">close</span>
-            </button>
-            <h3 class="font-display-lg text-2xl text-primary-container font-extrabold italic mb-6">Publish Track</h3>
-            <form id="publish-form" class="space-y-5">
-                <div>
-                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Track Title</label>
-                    <input type="text" id="publish-title" required minlength="1" class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
-                </div>
-                <div>
-                    <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Artist</label>
-                    <input type="text" id="publish-artist" required minlength="1" class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface border border-white/50 focus:border-white/80 focus:outline-none transition-colors bg-white/20" />
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex-1">
-                        <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">BPM</label>
-                        <input type="text" id="publish-bpm" readonly class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface/60 border border-white/30 bg-white/10 cursor-not-allowed" />
-                    </div>
-                    <div class="flex-1">
-                        <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Duration</label>
-                        <input type="text" id="publish-duration" readonly class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface/60 border border-white/30 bg-white/10 cursor-not-allowed" />
-                    </div>
-                    <div class="flex-1">
-                        <label class="font-label-sm text-on-surface-variant text-xs uppercase tracking-widest font-bold block mb-1.5">Notes</label>
-                        <input type="text" id="publish-note-count" readonly class="w-full aero-glass rounded-xl px-5 py-3 font-body-md text-on-surface/60 border border-white/30 bg-white/10 cursor-not-allowed" />
-                    </div>
-                </div>
-                <div class="hidden" id="publish-progress">
-                    <div class="h-3 w-full aero-glass rounded-full p-1 overflow-hidden border border-white/50">
-                        <div class="h-full w-full liquid-fill rounded-full animate-pulse"></div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4 pt-2">
-                    <button type="submit" class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-10 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95 flex-1" id="publish-submit">
-                        <span class="relative z-10">Publish</span>
-                    </button>
-                    <button type="button" class="font-body-md text-on-surface-variant hover:text-on-surface transition-colors px-4 py-3" id="publish-cancel">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Conflict Dialog -->
-    <div class="hidden fixed inset-0 z-[9001] items-center justify-center bg-black/40 backdrop-blur-sm" id="publish-conflict-dialog">
-        <div class="aero-glass w-full max-w-md rounded-[2rem] p-8 mx-4 border-2 border-white/60 shadow-2xl text-center space-y-6">
-            <span class="material-symbols-outlined text-5xl text-yellow-500">warning</span>
-            <p class="font-body-lg text-on-surface conflict-message">This track already exists. Play it instead?</p>
-            <div class="flex gap-4 justify-center">
-                <button class="glossy-button bg-gradient-to-b from-secondary-container to-secondary text-white font-headline-md px-8 py-3 rounded-full shadow-xl text-lg hover:scale-105 active:scale-95" id="conflict-play">
-                    <span class="relative z-10 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-                        Play
-                    </span>
-                </button>
-                <button class="font-body-md text-on-surface-variant hover:text-on-surface transition-colors px-6 py-3" id="conflict-cancel">Cancel</button>
-                            </div>
-                        </form>
-                    </div>
 </body>
 </html>
