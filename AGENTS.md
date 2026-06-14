@@ -5,6 +5,7 @@
 
 ## Связанная документация
 - `SPEC.md` — архитектура, формат beatmap, конфигурация, план по фазам.
+- `SUB_SPEC.md` — **спецификация модуля анализа треков.** Фазовая декомпозиция алгоритма beatmap builder (7 фаз: Decoding → Filtering → Envelope → Derivative → Peak Picking → BPM Grid → Pattern Generator).
 - `prototype/code.html` — **визуальный закон.** Каждый экран, кнопка, эффект должны на 100% воспроизводить этот прототип.
 - `prototype/DESIGN.md` — дизайн-система (палитра, типографика, spacing, компоненты).
 
@@ -118,6 +119,7 @@ tests/
 │   ├── hitDetection.test.js # Тесты детекции хитов (6 tests, все зелёные)
 │   ├── scoring.test.js     # Тесты скоринга (16 tests, все зелёные)
 │   └── auth.test.js        # Тесты авторизации (13 tests, все зелёные)
+SUB_SPEC.md             # Спецификация модуля анализа треков (7 фаз)
 package.json            # Зависимости backend + scripts
 ```
 
@@ -160,7 +162,7 @@ package.json            # Зависимости backend + scripts
 | 5 | Сервер и база данных (Express, SQLite, REST API) | **DONE** |
 | 6 | Авторизация и профиль | **DONE** |
 | 7 | Polish и VFX (particles, hit feedback, pause, volume, menu music) | **DONE** |
-| 8 | Анализатор треков | **TODO** — будет создан новый модуль `analyzer.js` |
+| 8 | Анализатор треков | **TODO** — `SUB_SPEC.md`, модуль `beatmapBuilder.js` |
 | 9 | История игр и результаты | **TODO** |
 
 ### Что реализовано
@@ -179,11 +181,42 @@ package.json            # Зависимости backend + scripts
 
 ### Known Issues
 
-1. **Анализатор удалён:** модуль `js/audio/analyzer.js` удалён. Новый анализатор будет создан в Фазе 8. Без анализатора gameplay не запускается (нет beatmap для спавна нот).
+1. **Анализатор удалён:** модуль `js/audio/analyzer.js` удалён. Новый анализатор будет создан в Фазе 8 по спецификации `SUB_SPEC.md` (модуль `beatmapBuilder.js`). Без анализатора gameplay не запускается (нет beatmap для спавна нот).
 
 2. **Фон отличается от прототипа:** в SPEC указан `linear-gradient(135deg, #c6e7ff 0%, #00aeef 40%, #004c6b 100%)`, в коде реализован aurora gradient с ribbon-слоями. Визуально красивее, но не совпадает с прототипом.
 
 3. **Social/Profile кнопки — заглушки:** в bottom nav bar кнопка Social не имеет функционала.
+
+## Модуль анализа треков (Phase 8)
+
+**Спецификация:** `SUB_SPEC.md` — полная фазовая декомпозиция алгоритма.
+
+**Модуль:** `js/audio/beatmapBuilder.js` (новый файл, не путать со старым `analyzer.js`).
+
+**Краткое описание пайплайна (7 фаз):**
+1. **Decoding** — получение моно PCM из AudioBuffer.
+2. **Transient Filtering** — изоляция кика (low-pass 100Hz) и снейра (band-pass 2500Hz) через OfflineAudioContext.
+3. **Envelope Follower** — выпрямление + IIR-сглаживание (α=0.05).
+4. **Attack Detection** — первая производная огибающей, half-wave rectification.
+5. **Peak Picking** — локальные максимумы с плавающим порогом, debounce 50мс.
+6. **BPM + Grid** — автокорреляция, квантование к сетке 1/4 и 1/8 долей (макс. сдвиг 30мс).
+7. **Pattern Generator** — маппинг на D/F/J/K: чередование, лестницы, триллы, аккорды на сильную долю.
+
+**Формат выхода:**
+```json
+{
+  "version": 1,
+  "metadata": { "bpm": 174.0, "offset": 0.125, "noteCount": 412 },
+  "notes": [
+    { "time": 1.125, "lane": 0 },
+    { "time": 1.470, "lane": 2 }
+  ]
+}
+```
+
+**Интеграция с `app.js`:** `handleFileLoad()` вызывает `buildBeatmap(file, onProgress)`, результат сохраняется в `currentBeatmap`. Констант `lanes` = 4 (D/F/J/K).
+
+**Тестирование:** Каждая фаза тестируется отдельно. Использовать синтетические данные (метроном-волна) для верификации пиков. Тесты в `tests/beatmapBuilder.test.js`.
 
 ## Экспорт API
 
