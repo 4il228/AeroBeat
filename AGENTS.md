@@ -39,7 +39,6 @@
 
 ### 2. Web Audio API только
 - **Воспроизведение:** `AudioContext` + `AudioBufferSourceNode` + `GainNode` (для volume). Никаких `<audio>` элементов — они не дают точного `currentTime`.
-- **Анализ:** `AudioContext.decodeAudioData()` → PCM → IIR-фильтрация (low/mid/snare/hi) → RMS energy → автокорреляция для BPM → генерация нот с ограничением ≤7 на экране.
 - `AudioContext.currentTime` — субмиллисекундная точность, единственный источник времени для синхронизации.
 - **Никогда** не создавай `AudioContext` до первого user interaction (autoplay policy).
 
@@ -65,7 +64,7 @@ noteElement.style.transform = `translateY(${noteY}px)`;
 - Избегай `document.createElement` / `element.remove()` в game loop — это вызывает GC.
 
 ### 6. Ошибки — всегда в UI
-- Ошибки (битый файл, нет onsets, формат не поддерживается) — стилизованные toast (`notifications.js`).
+- Ошибки (битый файл, формат не поддерживается) — стилизованные toast (`notifications.js`).
 - `console.error()` только для разработки. Пользователь должен видеть красивое сообщение.
 - Каждая `fetch`, `decodeAudioData`, file read — обёрнута в `try/catch` с UI-fallback.
 
@@ -77,9 +76,10 @@ css/
 js/
 │   ├── app.js          # Точка входа: инициализация, game loop, keyboard input, hit feedback
 │   ├── audio/
-│   │   ├── analyzer.js     # Frequency-band analysis, BPM (autocorrelation), beatmap builder
-│   │   ├── player.js       # Web Audio API player (load(file) + loadFromBuffer(arrayBuffer))
+│   │   ├── player.js       # Web Audio API player (load(file))
 │   │   └── menuMusic.js    # Web Audio API player для фоновой музыки меню (loop + fade)
+│   ├── auth/
+│   │   └── auth.js         # JWT-токен, register/login/logout, reactive UI
 │   ├── game/
 │   │   ├── conductor.js    # Спавн/деспавн, позиционирование, game loop, freeze phase
 │   │   ├── note.js         # Note DOM-элемент, Object Pooling (60 элементов)
@@ -88,35 +88,36 @@ js/
 │   │   └── scoring.js      # Очки, комбо, множитель, accuracy, grade
 │   └── ui/
 │       ├── screens.js      # Переключение экранов (hidden class toggle)
-│       ├── menu.js         # Главное меню: bubbles, file input, drag-drop, library button
-│       ├── loading.js      # Загрузка + progress bar + BPM label
+│       ├── menu.js         # Главное меню: bubbles, file input, drag-drop
+│       ├── loading.js      # Загрузка + progress bar
 │       ├── hud.js          # In-game HUD (score, combo, progress, song title)
 │       ├── results.js      # Результаты (grade glow, stats)
-│       ├── library.js      # Экран библиотеки серверных треков (search, cards, play)
-│       ├── publishForm.js  # Модальная форма публикации трека на сервер
+│       ├── profile.js      # Экран профиля: авторизация/регистрация + профиль
 │       ├── notifications.js # Toast-уведомления (ошибки, статус)
 │       └── volumeControl.js # Вертикальный слайдер громкости (Frutiger Aero стиль)
 server/
 │   ├── server.js           # Express server, middleware, static files, маршруты
-│   ├── db.js               # SQLite: init, schema (tracks table), migrations
+│   ├── db.js               # SQLite: init, schema (tracks, users tables), migrations
 │   ├── routes/
 │   │   ├── tracks.js       # CRUD /api/tracks (GET list, GET :id, POST publish, DELETE :id)
-│   │   └── upload.js       # POST /api/upload (standalone, НЕ подключён — дублирует tracks.js)
+│   │   └── auth.js         # Авторизация: POST register, POST login, GET me, PUT profile
 │   ├── uploads/
 │   │   └── tracks/         # Хранилище аудиофайлов ({SHA-256 hash}.{ext})
 │   └── aerobeat.db         # SQLite database файл (WAL mode)
 assets/
 │   ├── audio/
-│   │   └── main-theme.mp3  # Фоновая музыка меню
-│   └── fonts/              # Пустая директория (шрифты загружаются через Google Fonts CDN)
+│   │   ├── main-theme.mp3  # Фоновая музыка меню
+│   │   └── click-sfx.mp3   # Звук клика по кнопкам
+│   └── icons/
+│       └── favicon.png     # Favicon приложения
 prototype/
 │   ├── code.html           # Визуальный референс (единственный источник визуала)
 │   ├── DESIGN.md           # Дизайн-система (палитра, типографика, компоненты)
 │   └── screen.png          # Скриншот прототипа
 tests/
-│   ├── analyzer.test.js    # Тесты анализатора (6 tests, все зелёные)
-│   ├── hitDetection.test.js # Тесты детекции хитов (6 tests, 1 FAIL — см. Known Issues)
-│   └── scoring.test.js     # Тесты скоринга (16 tests, все зелёные)
+│   ├── hitDetection.test.js # Тесты детекции хитов (6 tests, все зелёные)
+│   ├── scoring.test.js     # Тесты скоринга (16 tests, все зелёные)
+│   └── auth.test.js        # Тесты авторизации (13 tests, все зелёные)
 package.json            # Зависимости backend + scripts
 ```
 
@@ -128,71 +129,61 @@ package.json            # Зависимости backend + scripts
 
 ### 9. Документирование
 - JSDoc для каждого публичного метода и класса.
-- Inline-комментарии для нетривиальных алгоритмов (frequency-band analysis, BPM detection, visibility constraint).
+- Inline-комментарии для нетривиальных алгоритмов.
 - Единый стиль: `/** Description */` для JSDoc, `//` для inline.
 
 ### 10. Тестирование
 - Фреймворк: **Vitest** (v1.6.0, `devDependencies`).
 - Тесты в `tests/`.
 - Запуск: `npm test` или `npx vitest run`.
-- Критичные модули (analyzer, hit detection, scoring) — покрыты тестами.
-- Анализатор тестируется на синтетических данных (метроном-волну генерируют в тестах через `generateMetronomeBuffer`).
-- **Known Issue:** Тест `hitDetection.test.js` → `categorizeHit` → `returns good for delta within GOOD_WINDOW` → FAIL: `expect(categorizeHit(0.05)).toBe('good')` получает `'perfect'`. Причина: 0.05 сек = 50мс = `PERFECT_WINDOW`, попадает в perfect зону. Тест некорректен — `0.05` должен ожидать `'perfect'`, а не `'good'`.
+- Критичные модули (hit detection, scoring, auth) — покрыты тестами.
 
 ## Процесс выполнения задач
 
-1. Строго по фазам из `SPEC.md` (все 7 фаз завершены — см. статусы ниже).
+1. Строго по фазам из `SPEC.md`.
 2. При доработках: сначала писать тесты, потом реализация, потом проверять `npm test`.
 3. В конце изменений:
    - Запустить `npm test` и убедиться что все тесты зелёные.
-   - Исправить Known Issue в `hitDetection.test.js`.
 4. Не упрощать визуал «для скорости». Frutiger Aero — это 50% продукта.
 5. Блокеры документировать, не обходить «любой ценой».
 
-## Текущее состояние проекта (все фазы завершены)
+## Текущее состояние проекта
 
 ### Статус фаз
 
 | Фаза | Описание | Статус |
 |------|----------|--------|
 | 1 | Инфраструктура и базовый HTML | **DONE** |
-| 2 | Аудио-модули (player + analyzer) | **DONE** |
+| 2 | Аудио-модули (player) | **DONE** (analyzer удалён — будет переписан) |
 | 3 | Игровая механика (conductor, notes, hit detection, scoring) | **DONE** |
-| 4 | Экраны и навигация (UI-модули, 100% match prototype) | **DONE** |
+| 4 | Экраны и навигация (UI-модули) | **DONE** |
 | 5 | Сервер и база данных (Express, SQLite, REST API) | **DONE** |
-| 6 | Публикация и Library (frontend + backend интеграция) | **DONE** |
+| 6 | Авторизация и профиль | **DONE** |
 | 7 | Polish и VFX (particles, hit feedback, pause, volume, menu music) | **DONE** |
+| 8 | Анализатор треков | **TODO** — будет создан новый модуль `analyzer.js` |
+| 9 | История игр и результаты | **TODO** |
 
-### Что реализовано сверх исходного плана
+### Что реализовано
 - **Menu Music** (`js/audio/menuMusic.js`) — Web Audio API плеер для фоновой музыки с loop и fade-in/fade-out.
 - **Volume Control** (`js/ui/volumeControl.js`) — вертикальный слайдер громкости в стиле Frutiger Aero, с persistent volume в localStorage.
 - **Pause System** — пауза по Escape, overlay с Resume/Quit кнопками.
 - **Hit Feedback** — floating text (Perfect!/Good/Miss) с анимацией вверх + fade.
-- **Particles** — зелёные/голубые/белые искры при Perfect/Good попаданиях (CSS `@keyframes particle-burst`).
+- **Particles** — зелёные/голубые искры при Perfect/Good попаданиях (CSS `@keyframes particle-burst`).
 - **Receptor Flash** — вспышка бордюра рецептора при попадании.
 - **Drag & Drop** — загрузка файла через drag на game viewport.
-- **Conflict Dialog** — при публикации дубликата показывается модалка с предложением Play/Cancel.
-- **Bottom Navigation Bar** — навигационная панель с Play/Library/Social/Profile (Social и Profile — заглушки).
-- **Aurora Background** — анимированный градиентный фон с ribbon-слоями вместо статического из прототипа.
+- **Bottom Navigation Bar** — навигационная панель с Play/Library/Social/Profile.
+- **Aurora Background** — анимированный градиентный фон с ribbon-слоями.
 - **Responsive Design** — адаптивные стили для `max-width: 768px` и `max-width: 480px`.
+- **Click SFX** — звук клика по кнопкам.
+- **JWT Авторизация** — регистрация, вход, профиль.
 
-### Known Issues и отклонения от SPEC
+### Known Issues
 
-1. **Тест `hitDetection.test.js` FAIL:** строка 14: `expect(categorizeHit(0.05)).toBe('good')` — получает `'perfect'`. 0.05с = 50мс = PERFECT_WINDOW, попадает в perfect. **Fix:** заменить预期 на `'perfect'` или изменить значение на `0.06`.
+1. **Анализатор удалён:** модуль `js/audio/analyzer.js` удалён. Новый анализатор будет создан в Фазе 8. Без анализатора gameplay не запускается (нет beatmap для спавна нот).
 
-2. **Фон отличается от прототипа:** в SPEC указан `linear-gradient(135deg, #c6e7ff 0%, #00aeef 40%, #004c6b 100%)`, в коде реализован aurora gradient с ribbon-слоями (`linear-gradient(160deg, #b8e6d0 0%, #7ec8e3 35%, #4fc3f7 70%, #81d4fa 100%)`). Визуально красивее, но не совпадает с прототипом.
+2. **Фон отличается от прототипа:** в SPEC указан `linear-gradient(135deg, #c6e7ff 0%, #00aeef 40%, #004c6b 100%)`, в коде реализован aurora gradient с ribbon-слоями. Визуально красивее, но не совпадает с прототипом.
 
-3. **`upload.js` не подключён:** файл `server/routes/upload.js` существует, но НЕ импортируется в `server.js`. Функционал загрузки полностью покрыт `routes/tracks.js` → `POST /api/tracks`. `upload.js` — мёртвый код.
-
-4. **`assets/fonts/` пустая:** шрифты загружаются через Google Fonts CDN. Локальные fallback-шрифты отсутствуют.
-
-5. **`.gitignore` отсутствует:** файл не найден в корне проекта. Нужно создать.
-
-6. **Hardcoded `API_BASE`:** в `library.js` и `publishForm.js` URL API захардкожен как `http://localhost:3000`. При деплое на другой порт/домен потребуется правка.
-
-7. **Social/Profile кнопки — заглушки:** в bottom nav bar кнопки Social и Profile не имеют функционала.
-
-8. **`node-cache` не используется:** SPEC упоминает `node-cache` для кэширования, но в `package.json` он отсутствует. Кэширование делается через `localStorage` на клиенте.
+3. **Social/Profile кнопки — заглушки:** в bottom nav bar кнопка Social не имеет функционала.
 
 ## Экспорт API
 
@@ -204,8 +195,8 @@ package.json            # Зависимости backend + scripts
 - `GET /api/health` — health check
 
 ### Frontend state
-- `currentBeatmap` — текущий beatmap объект
-- `currentFile` — `File` объект локально загруженного трека (null для треков из Library)
+- `currentBeatmap` — текущий beatmap объект (null пока анализатор не создан)
+- `currentFile` — `File` объект локально загруженного трека
 - `conductor` — текущий Conductor экземпляр
 - `scoringState` — текущий scoring state
 - `isPaused` — флаг паузы

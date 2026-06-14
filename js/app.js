@@ -6,7 +6,6 @@
 
 import { AudioPlayer } from './audio/player.js';
 import { MenuMusicPlayer } from './audio/menuMusic.js';
-import { generateBeatmap } from './audio/analyzer.js';
 import { initReceptors, getLaneX } from './game/receptor.js';
 import { initNotes } from './game/note.js';
 import { createConductor } from './game/conductor.js';
@@ -15,7 +14,7 @@ import { createScoringState, processHit, calculateAccuracy, determineGrade } fro
 
 import { navigate, setOnLeaveGameplay } from './ui/screens.js';
 import { createBubbles, setupFileInput, setupDragDrop } from './ui/menu.js';
-import { resetProgress, updateProgress as setLoadingProgress, setBpmLabel } from './ui/loading.js';
+import { resetProgress, updateProgress as setLoadingProgress } from './ui/loading.js';
 import { updateScore, updateCombo, updateProgress as setGameProgress, setSongTitle } from './ui/hud.js';
 import { showResults } from './ui/results.js';
 import { showToast } from './ui/notifications.js';
@@ -63,14 +62,12 @@ async function handleFileLoad(file) {
     currentFile = file;
 
     try {
-        currentBeatmap = await generateBeatmap(file, (progress) => {
-            setLoadingProgress(progress);
-        });
-
-        setBpmLabel(`${currentBeatmap.metadata.bpm} BPM DETECTED`);
+        // TODO: plug in new analyzer here — set currentBeatmap before starting gameplay
+        currentBeatmap = null;
 
         await audioPlayer.load(file);
 
+        setLoadingProgress(1);
         startGameplay();
     } catch (err) {
         navigate('screen-main-menu');

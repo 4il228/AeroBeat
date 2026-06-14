@@ -49,83 +49,69 @@ js/
 │   ├── auth/
 │   │   └── auth.js     # Класс Auth: JWT-токен, register/login/logout, reactive UI
 │   ├── audio/
-│   │   ├── analyzer.js     # frequency-band analysis, onset detection, beatmap builder
-│   │   ├── player.js       # Web Audio API player (load(file) + loadFromBuffer(arrayBuffer))
+│   │   ├── player.js       # Web Audio API player (load(file))
 │   │   └── menuMusic.js    # Web Audio API player для фоновой музыки меню (loop + fade)
 │   ├── game/
 │   │   ├── conductor.js    # Спавн/деспавн нот, синхронизация с временем, freeze phase, game loop
 │   │   ├── note.js         # Note DOM-элемент + Object Pooling (60 элементов)
 │   │   ├── receptor.js     # Receptor DOM-элемент + flash-эффект + позиционирование
-│   │   ├── hitDetection.js # categorize_hit, is_hit_valid, константы окон
+│   │   ├── hitDetection.js # categorizeHit, isHitValid, константы окон
 │   │   └── scoring.js      # Очки, комбо, множитель, accuracy, grade
 │   └── ui/
-│       ├── screens.js      # Переключение экранов (menu/loading/gameplay/results/library/profile)
-│       ├── menu.js         # Главное меню: bubbles, file input, drag-drop, library button
-│       ├── loading.js      # Экран загрузки + прогресс-бар + BPM label
+│       ├── screens.js      # Переключение экранов (menu/loading/gameplay/results/profile)
+│       ├── menu.js         # Главное меню: bubbles, file input, drag-drop
+│       ├── loading.js      # Экран загрузки + прогресс-бар
 │       ├── hud.js          # In-game HUD (score, combo, progress, song title)
 │       ├── results.js      # Экран результатов + grade glow
-│       ├── library.js      # Экран библиотеки серверных треков (search, cards, play)
-│       ├── publishForm.js  # Модальная форма публикации трека на сервер
-│       ├── profile.js      # Экран профиля: авторизация/регистрация + профиль + история игр
+│       ├── profile.js      # Экран профиля: авторизация/регистрация + профиль
 │       ├── notifications.js # Toast/модалки ошибок
 │       └── volumeControl.js # Вертикальный слайдер громкости (Frutiger Aero)
-├── server/
+server/
 │   ├── server.js           # Express server, middleware, static files, маршруты API
 │   ├── db.js               # SQLite: инициализация, schema, migrations
 │   ├── routes/
 │   │   ├── tracks.js       # CRUD /api/tracks (GET list, GET :id, POST publish, DELETE :id)
-│   │   ├── auth.js         # Авторизация: POST register, POST login, GET me, PUT profile
-│   │   └── results.js      # История игр: POST /api/results, GET /api/users/:id/history, GET /api/users/:id/stats
+│   │   └── auth.js         # Авторизация: POST register, POST login, GET me, PUT profile
 │   ├── uploads/
 │   │   └── tracks/         # Хранилище аудиофайлов ({SHA-256 hash}.{ext})
 │   └── aerobeat.db         # SQLite database файл (WAL mode)
-├── assets/
+assets/
 │   ├── audio/
-│   │   └── main-theme.mp3  # Фоновая музыка меню
-│   └── fonts/              # Пустая (шрифты через Google Fonts CDN)
-├── prototype/
+│   │   ├── main-theme.mp3  # Фоновая музыка меню
+│   │   └── click-sfx.mp3   # Звук клика по кнопкам
+│   └── icons/
+│       └── favicon.png     # Favicon приложения
+prototype/
 │   ├── code.html           # Визуальный референс
 │   ├── DESIGN.md           # Дизайн-система
 │   └── screen.png          # Скриншот прототипа
-├── tests/
-│   ├── analyzer.test.js    # 6 tests — все зелёные
+tests/
 │   ├── hitDetection.test.js # 6 tests — все зелёные
 │   ├── scoring.test.js     # 16 tests — все зелёные
-│   ├── auth.test.js        # 13 tests — все зелёные
-│   └── results.test.js     # tests — после реализации Фазы 9
-└── package.json            # Зависимости backend + scripts (express, better-sqlite3, multer, cors, bcryptjs, jsonwebtoken, express-rate-limit)
+│   └── auth.test.js        # 13 tests — все зелёные
+package.json            # Зависимости backend + scripts (express, better-sqlite3, multer, cors, bcryptjs, jsonwebtoken, express-rate-limit)
 ```
 
 ### 4.2. Модуль Audio Analyzer (`js/audio/analyzer.js`)
 
+**Статус:** Модуль удалён. Будет переписан с нуля.
+
+**Назначение:** Анализ аудиофайла и генерация beatmap (массива нот с таймингами и дорожками).
+
 **Вход:** `File` объект (из `<input type="file">` или drag-and-drop).
 **Выход:** Beatmap object (см. 4.6).
 
-**Алгоритм:**
-1. Чтение `File` → `ArrayBuffer` → `AudioContext.decodeAudioData()`.
-2. Извлечение PCM-данных из `AudioBuffer.getChannelData(0)`.
-3. **Разделение на частотные полосы (IIR-фильтры):**
-   - Low: 0–200 Hz (бочка) — Butterworth 2-го порядка, lowpass.
-   - Mid: 200–2500 Hz (вокал, лиды) — разность lowpass(2500) − lowpass(200).
-   - Snare: 2500–6000 Hz — разность lowpass(6000) − lowpass(2500).
-   - Hi: 6000+ Hz (хайхеты, цымбалы) — исходный сигнал − lowpass(6000).
-4. **RMS-энергия по полосам:** окно 2048, хоп 1024.
-5. **Onset detection в каждой полосе:**
-   - Адаптивный порог: `localMean * 1.15` (скользящее окно 20 фреймов).
-   - Пик должен быть > предыдущего значения и >= следующего.
-   - МинимальныйGap между нотами на одном лене: 90мс (`LANE_MIN_GAP`).
-   - МинимальныйGap между любыми нотами: 40мс (`GLOBAL_MIN_GAP`).
-6. **Назначение ленов по полосам:**
-   - Low (0–200Hz) → track 0 (клавиша D) — бочка.
-   - Mid (200–2500Hz) → track 1 (клавиша F) — вокал/лиды.
-   - Snare (2500–6000Hz) → track 2 (клавиша J) — снейр/хлопки.
-   - Hi (6000Hz+) → track 3 (клавиша K) — хайхеты/цимбалы.
-7. **BPM-детекция** (только для метаданных, не для раскладки нот): автокорреляция по low-полосе в диапазоне 60–200 BPM.
-8. **Кэширование:** `localStorage` с ключом `hash(filename + size + lastModified)`. Старый кеш нужно очищать при изменении алгоритма.
+**Требования к новой реализации:**
+1. Приём `File` объекта + callback прогресса.
+2. Декодирование аудио через `AudioContext.decodeAudioData()`.
+3. Анализ энергии по частотным полосам → detection onsets → генерация нот.
+4. Маппинг частотных полос на 4 дорожки (D/F/J/K).
+5. BPM-детекция для метаданных.
+6. Кэширование в `localStorage` для повторных загрузок того же файла.
+7. Возврат объекта `{ metadata: {...}, notes: [...] }` (формат см. 4.11).
+8. Обработка ошибок через UI (toast), не console.
 
-**Ключевое отличие от классического подхода:** ноты НЕ привязаны к BPM-сетке. Они ставятся на реальные пики энергии в частотных полосах, что даёт точное соответствие звуку.
-
-**Ошибки:** Всегда показывать в UI (toast), не в console.
+**Пока анализатор не создан:** `handleFileLoad` в `app.js` устанавливает `currentBeatmap = null` и gameplay не запускает ноты.
 
 ### 4.3. Модуль Audio Player (`js/audio/player.js`)
 
@@ -146,7 +132,6 @@ class AudioPlayer {
 
   init()   { /* new AudioContext() + GainNode — вызывать только после user gesture */ }
   async load(file) { /* File → arrayBuffer → decodeAudioData → this.buffer */ }
-  async loadFromBuffer(arrayBuffer) { /* ArrayBuffer → decodeAudioData → this.buffer (для Library треков) */ }
   async play()     { /* source.start(0, pauseOffset); startTime = ctx.currentTime; resume AudioContext if suspended */ }
   stop()    { /* source.stop(); playing = false; pauseOffset = 0 */ }
   pause()   { /* source.stop(); pauseOffset = raw position; playing = false */ }
@@ -166,10 +151,6 @@ class AudioPlayer {
 }
 ```
 
-**Два метода загрузки:**
-- `load(file)` — принимает `File` объект (из `<input type="file">` / drag-and-drop). Используется для локально загруженных треков.
-- `loadFromBuffer(arrayBuffer)` — принимает `ArrayBuffer` (из `fetch(url).then(r => r.arrayBuffer())`). Используется для треков из Library (аудио загружается с сервера по URL).
-
 **Ключевые моменты:**
 - `AudioContext` создаётся только после user gesture (autoplay policy).
 - `AudioContext.currentTime` — высокоточный timestamp (sub-millisecond).
@@ -186,7 +167,7 @@ Web Audio API плеер для фоновой музыки меню.
 - `AudioBufferSourceNode` с `loop = true` для бесконечного повтора.
 - Два `GainNode`: `masterGain` (общая громкость) × `fadeGain` (fade-in/out).
 - `fadeIn(duration, targetVolume)` — плавное нарастание через `linearRampToValueAtTime`.
-- `fadeOut(duration)` — плавное затухание до 0, остановка source после завершения fade.
+- `fadeOut(duration)` — плавное затухание до 0. Source продолжает крутиться в цикле тихо — `fadeIn` может плавно вернуть громкость.
 - `AudioContext` создаётся только при первом user interaction.
 - `load(url)` — загрузка аудио по URL через `fetch`.
 - Громкость по умолчанию: 0.35 (тише игрового аудио).
@@ -278,7 +259,6 @@ updateNotePosition(el, y)
 despawnNote(noteIndex)
 getActiveNote(noteIndex) → HTMLElement|undefined
 clearAllNotes()
-activeNoteCount() → number
 ```
 
 ### 4.9. Модуль Receptor (`js/game/receptor.js`)
@@ -290,7 +270,6 @@ initReceptors(laneCount = 4)       // Query DOM для .receptor[data-lane="0..3
 flashReceptor(lane)                 // Вспышка border-color при попадании (120мс)
 getLaneX(lane, notesContainer) → px // Центр X рецептора относительно notes-container
 getReceptorY(notesContainer) → px   // Центр Y рецептора
-clearAllFlashes()
 ```
 
 ### 4.10. Параметры конфигурации
@@ -309,8 +288,6 @@ const CONFIG = {
   POOL_SIZE: 60,            // max DOM-элементов нот одновременно
   FREEZE_OFFSET_PX: 100,    // px — первая нота замораживается на этом расстоянии выше рецептора
   FREEZE_DURATION: 3,       // сек — время freeze перед стартом игры
-  LANE_MIN_GAP: 0.09,       // сек — мин. интервал между нотами на одном лене
-  GLOBAL_MIN_GAP: 0.04,     // сек — мин. интервал между любыми нотами
 };
 ```
 
@@ -333,11 +310,11 @@ const CONFIG = {
 ```
 
 - `notes[i].time`: float, секунды от начала трека.
-- `notes[i].track`: int, 0..3 (колонки D, F, J, K) — назначается по частотной полосе, в которой обнаружен onset:
-  - 0 (D): low (0–200Hz, бочка)
-  - 1 (F): mid (200–2500Hz, вокал/лиды)
-  - 2 (J): snare (2500–6000Hz, снейр/хлопки)
-  - 3 (K): hi (6000Hz+, хайхеты/цимбалы)
+- `notes[i].track`: int, 0..3 (колонки D, F, J, K) — назначается анализатором по частотной полосе:
+  - 0 (D): low (бочка)
+  - 1 (F): mid (вокал/лиды)
+  - 2 (J): snare (снейр/хлопки)
+  - 3 (K): hi (хайхеты/цимбалы)
 
 ### 4.12. Серверная база данных (SQLite)
 
@@ -366,7 +343,7 @@ CREATE INDEX idx_tracks_title ON tracks(title);
 
 **Принципы хранения:**
 - Аудиофайл сохраняется на диск в `uploads/tracks/` с именем `{SHA-256 hash}.{ext}`. Это обеспечивает дедупликацию: один и тот же файл не сохраняется дважды.
-- Beatmap (JSON с нотами) сериализуется и хранится в колонке `beatmap` таблицы `tracks`. При загрузке трека из Library beatmap десериализуется и передаётся клиенту — анализ не повторяется.
+- Beatmap (JSON с нотами) сериализуется и хранится в колонке `beatmap` таблицы `tracks`. При загрузке трека beatmap десериализуется и передаётся клиенту — анализ не повторяется.
 - BPM вычисляется на клиенте при первом анализе и сохраняется в БД вместе с beatmap.
 - SQLite работает в WAL mode для конкурентного доступа.
 
@@ -440,63 +417,7 @@ CREATE INDEX idx_tracks_title ON tracks(title);
 { "status": "ok", "timestamp": "2025-01-15T12:00:00Z" }
 ```
 
-### 4.14. Процесс публикации трека (клиентская логика)
-
-**State в `app.js`:**
-- `currentBeatmap` — объект beatmap (уже есть).
-- `currentFile` — `File` объект локально загруженного трека. Если `null` → трек из Library.
-- При загрузке через drag-and-drop / file input: `currentFile = file`.
-- При запуске игры из Library: `currentFile = null` (beatmap и аудио пришли с сервера).
-- Кнопка «Publish your beatmap» видна **только** когда `currentFile !== null`.
-
-**Тригеры:** Кнопка «Publish your beatmap» появляется:
-1. На экране **Results** — после завершения игры (проигрывания трека до конца).
-2. Кнопка **Stop** на экране Gameplay — досрочный выход из игры.
-
-**Важно:** Кнопка появляется **только** для треков, загруженных пользователем через drag-and-drop / file input. Для треков из Library кнопка не показывается (трек уже опубликован).
-
-**UX-флоу публикации:**
-
-1. Пользователь нажимает «Publish your beatmap».
-2. Открывается **модальное окно формы** (glassmorphism, поверх текущего экрана):
-   - Поле «Track title» — `input[type="text"]`, обязательное.
-   - Поле «Artist» — `input[type="text"]`, обязательное.
-   - Инфо-блок: BPM (автозаполнен, readonly), длительность, количество нот.
-   - Кнопка «Publish» — glossy Frutiger Aero стиль.
-   - Кнопка «Cancel» — текстовая.
-3. При отправке:
-   - Клиент отправляет `POST /api/tracks` с аудиофайлом + метаданными + beatmap JSON.
-   - Показывается индикатор загрузки (liquid-fill progress bar).
-   - При успехе → toast «Track published!» + автоматический переход в Library.
-   - При 409 Conflict → диалог: «This track already exists as "{title}" by {artist}. Play it instead?» с кнопками «Play» / «Cancel».
-   - При ошибке → toast с описанием.
-
-### 4.15. Экран Library
-
-**Назначение:** Просмотр и запуск треков, уже загруженных на сервер. Игрок не загружает файл — просто выбирает и играет.
-
-**Получение данных:** `GET /api/tracks` → список треков.
-
-**UI-компоновка:**
-- Заголовок «Library» + кнопка «Back to menu».
-- Поле поиска/фильтрации (glassmorphism input).
-- Сетка карточек треков (glassmorphism, 1-2 колонки).
-- Каждая карточка содержит:
-  - Название трека (жирный).
-  - Исполнитель.
-  - BPM + длительность (mm:ss) + количество нот.
-  - Кнопка «Play» — glossy green.
-- Пустое состояние: «No tracks published yet. Upload a track and publish it!».
-- Поиск/фильтрация по названию или исполнителю (кастомный `input` в стиле Frutiger Aero).
-
-**Запуск игры из Library:**
-1. Пользователь нажимает «Play» на карточке.
-2. Клиент запрашивает `GET /api/tracks/:id` → получает beatmap JSON + file_path.
-3. Клиент запрашивает аудиофайл: `fetch(http://localhost:3000/{file_path})` → ArrayBuffer.
-4. Инициализируется `AudioPlayer.loadFromBuffer(arrayBuffer)` + beatmap передаётся в `Conductor`.
-5. Переход к экрану Gameplay (freeze phase → countdown → игра).
-
-### 4.16. Модуль Volume Control (`js/ui/volumeControl.js`)
+### 4.14. Модуль Volume Control (`js/ui/volumeControl.js`)
 
 Вертикальный слайдер громкости в стиле Frutiger Aero, расположенный справа от game viewport.
 
@@ -508,32 +429,29 @@ CREATE INDEX idx_tracks_title ON tracks(title);
 - Дефолтная громкость: 0.75.
 - Управляет `audioPlayer.volume` и `menuMusic.volume` одновременно.
 
-### 4.17. Навигация между экранами
+### 4.15. Навигация между экранами
 
 ```
 Menu → Loading → Gameplay → Results → Menu
                     ↑ (stop button) ↵
-                    ↓ (publish)
-              Publish Form (modal)
-                    ↓ (after publish)
-                  Library ←──── Menu
-                    ↓ (play track)
-                  Loading → Gameplay → Results → Menu
+
+              Profile ←──── Menu (bottom nav)
+                    ↓ (login/register or view profile)
 ```
 
 Каждый экран — `<section>` с `class="hidden"`. Переключение через JS (`screens.js` → `navigate(screenId)`).
 
-**Bottom Nav Bar:** Play (активный), Library, Social (заглушка), Profile.
+**Bottom Nav Bar:** Play (активный), Library (заглушка — Coming soon), Social (заглушка — Coming soon), Profile.
 
-### 4.18. Авторизация и система пользователей
+### 4.16. Авторизация и система пользователей
 
-#### 4.18.1. Обзор
+#### 4.16.1. Обзор
 Система авторизации по логину и паролю с JWT-токенами. Авторизация не является обязательной — приложение полностью функционально без аккаунта. Зарегистрированные пользователи получают:
 - Сохранение истории игр на сервере (score, accuracy, grade).
 - Профиль с общей статистикой (total games, average accuracy, favorite track).
 - Публикация треков привязывается к пользователю (owner_id).
 
-#### 4.18.2. Безопасность — приоритет
+#### 4.16.2. Безопасность — приоритет
 
 **Хеширование паролей:**
 - Библиотека: `bcryptjs` (pure JS, без нативных зависимостей — работает на любом хостинге).
@@ -572,7 +490,7 @@ function authenticateToken(req, res, next) {
 
 **Middleware `optionalAuth`:** Аналогичный `authenticateToken`, но не блокирует запрос — просто добавляет `req.user = null` если токена нет. Используется для эндпоинтов, которые работают по-разному для авторизованных/неавторизованных пользователей.
 
-#### 4.18.3. Схема БД — таблица `users`
+#### 4.16.3. Схема БД — таблица `users`
 
 ```sql
 CREATE TABLE users (
@@ -594,7 +512,7 @@ CREATE UNIQUE INDEX idx_users_email ON users(email);
 - `password_hash` — bcrypt hash пароля (60 символов).
 - `display_name` — отображаемое имя (по умолчанию = username).
 
-#### 4.18.4. REST API — Авторизация
+#### 4.16.4. REST API — Авторизация
 
 ##### `POST /api/auth/register` — регистрация нового пользователя
 
@@ -691,7 +609,7 @@ CREATE UNIQUE INDEX idx_users_email ON users(email);
 2. Если верный → `bcrypt.hash(newPassword, 12)` → обновить в БД.
 3. Вернуть 200: `{ success: true }`.
 
-#### 4.18.5. Клиентский модуль авторизации (`js/auth/auth.js`)
+#### 4.16.5. Клиентский модуль авторизации (`js/auth/auth.js`)
 
 ```javascript
 class Auth {
@@ -726,16 +644,9 @@ class Auth {
         this._notify();
     }
 
-    get isLoggedIn() { return !!this.user; }
-
     /** Подписка на изменение состояния авторизации */
     onChange(callback) { this._listeners.push(callback); }
     _notify() { this._listeners.forEach(cb => cb(this.user)); }
-
-    /** Auth header для защищённых запросов */
-    get authHeader() {
-        return this.token ? { 'Authorization': `Bearer ${this.token}` } : {};
-    }
 }
 ```
 
@@ -745,7 +656,7 @@ class Auth {
 
 **Reactive UI:** `auth.onChange(callback)` — колбэк вызывается при login/logout. Все UI-компоненты (Profile screen, nav bar) подписываются и перерисовываются.
 
-#### 4.18.6. Зависимости (package.json)
+#### 4.16.6. Зависимости (package.json)
 
 Добавлены в `dependencies`:
 ```json
@@ -760,7 +671,7 @@ class Auth {
 - `jsonwebtoken` — JWT создание и верификация.
 - `express-rate-limit` — rate limiting middleware.
 
-### 4.19. Схема БД — таблица `game_results`
+### 4.17. Схема БД — таблица `game_results`
 
 Хранение результатов каждой игры для истории и статистики профиля.
 
@@ -795,7 +706,7 @@ CREATE INDEX idx_results_played ON game_results(played_at);
 - `ON DELETE CASCADE` для user → если пользователь удалён, его результаты удаляются.
 - `ON DELETE SET NULL` для track → если трек удалён, `track_id` становится NULL, но `track_title` остаётся.
 
-### 4.20. REST API — Результаты игр
+### 4.18. REST API — Результаты игр
 
 ##### `POST /api/results` — сохранить результат игры (защищённый)
 
@@ -867,11 +778,11 @@ CREATE INDEX idx_results_played ON game_results(played_at);
 - `favorite_track` — трек, в котором больше всего игр (или NULL).
 - `joined_at` — дата регистрации.
 
-### 4.21. Экран Profile
+### 4.19. Экран Profile
 
 **Назначение:** Управление аккаунтом, просмотр профиля и истории игр.
 
-#### 4.21.1. Два состояния экрана
+#### 4.19.1. Два состояния экрана
 
 **Состояние 1: Неавторизованный пользователь**
 Отображается форма авторизации/регистрации с переключением между вкладками.
@@ -879,7 +790,7 @@ CREATE INDEX idx_results_played ON game_results(played_at);
 **Состояние 2: Авторизованный пользователь**
 Отображается профиль с информацией и историей игр.
 
-#### 4.21.2. HTML-структура (добавить в `index.html`)
+#### 4.19.2. HTML-структура (добавить в `index.html`)
 
 ```html
 <!-- 6. Profile Screen -->
@@ -956,7 +867,7 @@ CREATE INDEX idx_results_played ON game_results(played_at);
             <div class="flex items-center gap-6">
                 <!-- Avatar circle -->
                 <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-container to-secondary flex items-center justify-center">
-                    <span class="font-display-lg text-4xl text-white" id="profile-avatar-letter">P</span>
+                    <span class="material-symbols-outlined text-4xl text-white">person</span>
                 </div>
                 <div>
                     <h2 class="font-display-lg text-2xl text-on-surface" id="profile-display-name">Player One</h2>
@@ -1007,7 +918,7 @@ CREATE INDEX idx_results_played ON game_results(played_at);
 </section>
 ```
 
-#### 4.21.3. UI-компонент: карточка результата в истории
+#### 4.19.3. UI-компонент: карточка результата в истории
 
 ```html
 <div class="aero-glass rounded-2xl p-4 border border-white/50 flex items-center justify-between">
@@ -1027,9 +938,7 @@ CREATE INDEX idx_results_played ON game_results(played_at);
 </div>
 ```
 
-#### 4.21.4. Клиентская логика (`js/ui/profile.js`)
-
-**Важно:** Формы login/register — это `<div>`, а не `<form>`. Кнопки отправки привязаны через `click`, а не `submit`. Причина: `<form>` ломает layout нижнего нав-бара (Tailwind CSS конфликт).
+#### 4.19.4. Клиентская логика (`js/ui/profile.js`)
 
 ```javascript
 export function initProfile(auth) {
@@ -1055,7 +964,7 @@ function renderProfile(user) {
 }
 ```
 
-#### 4.21.5. Интеграция с `app.js`
+#### 4.19.5. Интеграция с `app.js`
 
 ```javascript
 // В DOMContentLoaded:
@@ -1063,37 +972,34 @@ import { Auth } from './auth/auth.js';
 import { initProfile } from './ui/profile.js';
 
 const auth = new Auth();
-await auth.init(); // проверить токен
-
-initProfile(auth);
-
-// Передать auth в initPublishForm (привязка трека к пользователю)
-// Передать auth в handleGameEnd (сохранение результата)
+auth.init().then(() => {
+    initProfile(auth);
+});
 ```
 
-#### 4.21.6. Сохранение результата игры
+#### 4.19.6. Сохранение результата игры
 
 В `handleGameEnd()` (app.js), после вычисления accuracy и grade:
 
 ```javascript
-if (auth.isLoggedIn) {
+if (auth && auth.isLoggedIn) {
     try {
         await fetch('/api/results', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                ...auth.authHeader
+                'Authorization': `Bearer ${auth.token}`
             },
             body: JSON.stringify({
-                track_id: currentTrackId,   // null для локальных файлов
+                track_id: currentTrackId || null,
                 track_title: currentBeatmap.metadata.title,
                 score: scoringState.score,
                 accuracy,
                 grade,
                 max_combo: scoringState.maxCombo,
-                perfect_count: scoringState.perfect,
-                good_count: scoringState.good,
-                miss_count: scoringState.miss,
+                perfect_count: scoringState.perfectCount,
+                good_count: scoringState.goodCount,
+                miss_count: scoringState.missCount,
                 total_notes: currentBeatmap.notes.length
             })
         });
@@ -1101,7 +1007,7 @@ if (auth.isLoggedIn) {
 }
 ```
 
-#### 4.21.7. Навигация
+#### 4.19.7. Навигация
 
 ```
 Bottom Nav Bar: Profile → navigate('screen-profile')
@@ -1109,30 +1015,7 @@ Bottom Nav Bar: Profile → navigate('screen-profile')
 
 Profile button в nav bar:
 - Если не авторизован: показывает иконку `person` (серая).
-- Если авторизован: показывает первую букву username в цветном круге.
-
-### 4.22. Обновлённая навигация между экранами
-
-```
-Menu → Loading → Gameplay → Results → Menu
-                    ↑ (stop button) ↵
-                    ↓ (publish)
-              Publish Form (modal)
-                    ↓ (after publish)
-              Library ←──── Menu
-                    ↓ (play track)
-              Loading → Gameplay → Results → Menu
-
-              Profile ←──── Menu (bottom nav)
-                    ↓ (login/register or view profile)
-              History ←──── Profile
-```
-
-**Bottom Nav Bar (обновлённый):**
-- Play → `navigate('screen-main-menu')` (активный по умолчанию)
-- Library → `navigate('screen-library')` + загрузка списка
-- Social → заглушка (показать toast «Coming soon»)
-- Profile → `navigate('screen-profile')`
+- Если авторизован: показывает иконку `person` (цветная).
 
 ## 5. UI/UX (из prototype/code.html)
 
@@ -1201,12 +1084,11 @@ Menu → Loading → Gameplay → Results → Menu
 4. ✅ Создать `js/app.js` — заглушка, проверка что JS работает.
 5. ✅ Tailwind config с кастомными цветами, шрифтами, spacing.
 
-### Фаза 2: Аудио-модули ✅
-**Статус:** Завершена.
+### Фаза 2: Аудио-модули ✅ (анализатор удалён, будет переписан)
+**Статус:** Завершена (без анализатора).
 
 1. ✅ **`js/audio/player.js`** — AudioPlayer на Web Audio API с GainNode для volume.
-2. ✅ **`js/audio/analyzer.js`** — Анализ аудио: IIR-фильтрация, RMS, onset detection, BPM detection, кэширование.
-3. ✅ **Тесты:** `tests/analyzer.test.js` — 6 tests на синтетических данных (метроном-волна).
+2. ~~**`js/audio/analyzer.js`**~~ — **Удалён.** Будет создан новый модуль в Фазе 8.
 
 ### Фаза 3: Игровая механика ✅
 **Статус:** Завершена.
@@ -1224,13 +1106,13 @@ Menu → Loading → Gameplay → Results → Menu
 **Статус:** Завершена.
 
 1. ✅ **`js/ui/screens.js`** — переключение экранов + `setOnLeaveGameplay`.
-2. ✅ **`js/ui/menu.js`** — bubbles, file input, drag-drop, library button.
-3. ✅ **`js/ui/loading.js`** — progress bar + BPM label + engine label.
+2. ✅ **`js/ui/menu.js`** — bubbles, file input, drag-drop.
+3. ✅ **`js/ui/loading.js`** — progress bar.
 4. ✅ **`js/ui/hud.js`** — score, combo, progress, song title.
 5. ✅ **`js/ui/results.js`** — grade glow, stats layout.
 6. ✅ **`js/ui/notifications.js`** — toast-уведомления.
 7. ✅ **Drag & Drop** — загрузка файла через drag на game viewport.
-8. ✅ **Bottom Nav Bar** — Play, Library, Social (заглушка), Profile (заглушка).
+8. ✅ **Bottom Nav Bar** — Play, Library (заглушка), Social (заглушка), Profile.
 
 ### Фаза 5: Сервер и база данных ✅
 **Статус:** Завершена.
@@ -1246,22 +1128,18 @@ Menu → Loading → Gameplay → Results → Menu
 5. ✅ **Static serving:** Express раздаёт корень проекта + `uploads/`.
 6. ✅ **Health check:** `GET /api/health`.
 
-### Фаза 6: Публикация и Library (frontend) ✅
+### Фаза 6: Авторизация и профиль ✅
 **Статус:** Завершена.
 
-1. ✅ **`js/ui/publishForm.js`** — модальное окно формы публикации:
-   - Поля: title, artist, BPM (readonly), duration (readonly), note count (readonly).
-   - Валидация: title и artist обязательны.
-   - Отправка: `POST /api/tracks` с FormData.
-   - Состояния: idle → loading → success → redirect to Library.
-   - Обработка 409 Conflict: диалог с кнопками Play / Cancel.
-2. ✅ **Кнопка «Publish your beatmap»** на Results screen (только для локальных файлов).
-3. ✅ **`js/ui/library.js`** — экран Library:
-   - Загрузка списка: `GET /api/tracks`.
-   - Карточки треков (glassmorphism).
-   - Поиск/фильтрация.
-   - Запуск игры: `GET /api/tracks/:id` → beatmap → `loadFromBuffer` → Gameplay.
-4. ✅ **`js/ui/menu.js`** — Library button в главном меню + bottom nav bar.
+1. ✅ **`server/db.js`** — таблица `users` (id, username, email, password_hash, display_name, created_at) + индексы.
+2. ✅ **`server/routes/auth.js`** — `POST /register`, `POST /login`, `GET /me`, `PUT /profile`, middleware `authenticateToken`, rate limiting (20 req/min).
+3. ✅ **`server/server.js`** — auth-роутер подключён на `/api/auth`.
+4. ✅ **`js/auth/auth.js`** — класс `Auth`: JWT в localStorage (`aerobeat-jwt`), init/register/login/logout, onChange.
+5. ✅ **`js/ui/profile.js`** — экран Profile: login/register forms (tab switching), profile view (avatar, username, logout).
+6. ✅ **`index.html`** — `<section id="screen-profile">` с auth forms и profile view.
+7. ✅ **`js/ui/screens.js`** — `'screen-profile'` в `SCREEN_IDS`.
+8. ✅ **`js/app.js`** — Auth init, initProfile(auth), nav bar Profile → navigate, Social → toast.
+9. ✅ **`tests/auth.test.js`** — 13 tests: register/login/me/middleware.
 
 ### Фаза 7: Polish и VFX ✅
 **Статус:** Завершена.
@@ -1274,30 +1152,79 @@ Menu → Loading → Gameplay → Results → Menu
 6. ✅ **Volume control:** вертикальный слайдер справа от viewport, persistent volume.
 7. ✅ **Menu music:** фоновая музыка с loop и fade-in/out (`assets/audio/main-theme.mp3`).
 8. ✅ **Drag & Drop:** загрузка файла через drag.
-9. ✅ **Conflict dialog:** 409 Conflict → модалка Play/Cancel.
-10. ✅ **Responsive Design:** адаптивные стили для 768px и 480px.
-11. ✅ **Aurora Background:** анимированный gradient с ribbon-слоями.
+9. ✅ **Responsive Design:** адаптивные стили для 768px и 480px.
+10. ✅ **Aurora Background:** анимированный gradient с ribbon-слоями.
+11. ✅ **Click SFX:** звук клика по кнопкам.
 
-### Фаза 8: Profile и Авторизация ✅
-**Статус:** Завершена.
+### Фаза 8: Анализатор треков
+**Статус:** Не реализована.
 
-**Контекст:** Интерфейс и игра полностью функциональны без авторизации. Авторизация нужна только для вкладки «Profile». Если пользователь не авторизован — история не сохраняется, но игра доступна.
+**Контекст:** Предыдущий анализатор (`js/audio/analyzer.js`) удалён. Нужно создать новый модуль генерации beatmap из аудиофайла.
 
-**Реализовано:**
-1. ✅ **`server/db.js`** — таблица `users` (id, username, email, password_hash, display_name, created_at) + индексы.
-2. ✅ **`server/routes/auth.js`** — `POST /register`, `POST /login`, `GET /me`, `PUT /profile`, middleware `authenticateToken`, rate limiting (20 req/min).
-3. ✅ **`server/server.js`** — auth-роутер подключён на `/api/auth`.
-4. ✅ **`js/auth/auth.js`** — класс `Auth`: JWT в localStorage (`aerobeat-jwt`), init/register/login/logout, onChange, authHeader.
-5. ✅ **`js/ui/profile.js`** — экран Profile: login/register forms (tab switching), profile view (avatar, username, logout).
-6. ✅ **`index.html`** — `<section id="screen-profile">` с auth forms и profile view.
-7. ✅ **`js/ui/screens.js`** — `'screen-profile'` в `SCREEN_IDS`.
-8. ✅ **`js/app.js`** — Auth init, initProfile(auth), nav bar Profile → navigate, Social → toast.
-9. ✅ **`tests/auth.test.js`** — 13 tests: register/login/me/middleware.
+**Зависимости:** Нет. Работает на чистом Web Audio API.
+
+---
+
+#### 8.1. Требования к модулю `js/audio/analyzer.js`
+
+**Вход:** `File` объект + `onProgress` callback.
+**Выход:** Beatmap object `{ metadata: {...}, notes: [...] }`.
+
+**Алгоритм (базовый):**
+1. `File` → `ArrayBuffer` → `AudioContext.decodeAudioData()`.
+2. Извлечение PCM из `AudioBuffer.getChannelData(0)`.
+3. Анализ энергии по частотным полосам (IIR-фильтры или FFT).
+4. Detection onsets в каждой полосе.
+5. Маппинг полос на 4 дорожки (D/F/J/K).
+6. BPM-детекция для метаданных.
+7. Кэширование в `localStorage`.
+
+**Ключевые константы:**
+- `LANE_MIN_GAP`: 0.09 сек — мин. интервал между нотами на одном лене.
+- `GLOBAL_MIN_GAP`: 0.04 сек — мин. интервал между любыми нотами.
+
+**Ошибки:** Всегда показывать в UI (toast), не в console.
+
+---
+
+#### 8.2. Интеграция с `app.js`
+
+В `handleFileLoad()`:
+```javascript
+currentBeatmap = await generateBeatmap(file, (progress) => {
+    setLoadingProgress(progress);
+});
+setBpmLabel(`${currentBeatmap.metadata.bpm} BPM DETECTED`);
+```
+
+---
+
+#### 8.3. Тесты
+
+**Файл:** `tests/analyzer.test.js`
+
+Тесты на синтетических данных (метроном-волна):
+1. `generateBeatmap` возвращает beatmap с metadata и notes.
+2. Ноты имеют time и track.
+3. onProgress callback вызывается.
+4. Кэширование работает (второй вызов из кеша).
+5. `getCachedBeatmap` возвращает null для нового файла.
+6. `cacheBeatmap` сохраняет и извлекает.
+
+---
+
+#### 8.4. Чеклист для агента
+
+1. **`js/audio/analyzer.js`** — создать модуль.
+2. **`tests/analyzer.test.js`** — написать тесты.
+3. **`js/app.js`** — подключить `generateBeatmap` в `handleFileLoad`.
+4. **`npm test`** — все тесты зелёные.
+5. **SPEC.md** — обновить статус Фазы 8 на ✅ DONE.
 
 ### Фаза 9: История игр и результаты
 **Статус:** Не реализована.
 
-**Контекст:** Базовая авторизация и профиль уже работают (Фаза 8). Сейчас при завершении игры результат не сохраняется. Нужно: сохранять результат каждой игры на сервере, показывать историю в профиле, показывать статистику.
+**Контекст:** Базовая авторизация и профиль уже работают (Фаза 6). Сейчас при завершении игры результат не сохраняется. Нужно: сохранять результат каждой игры на сервере, показывать историю в профиле, показывать статистику.
 
 **Зависимости:** Дополнительные пакеты не нужны — всё работает на существующих `better-sqlite3` + `jsonwebtoken`.
 
@@ -1452,7 +1379,7 @@ if (auth && auth.isLoggedIn) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                ...auth.authHeader
+                'Authorization': `Bearer ${auth.token}`
             },
             body: JSON.stringify({
                 track_id: currentTrackId || null,
@@ -1471,7 +1398,7 @@ if (auth && auth.isLoggedIn) {
 }
 ```
 
-**Важно:** `currentTrackId` — переменная, которая задаётся при запуске игры из Library (из `handleLibraryPlay`). Для локальных файлов = null. Нужно добавить переменную `currentTrackId` в state app.js и устанавливать её в `handleLibraryPlay(trackId)`.
+**Важно:** `currentTrackId` — переменная, которая задаётся при запуске игры ( null для локальных файлов). Нужно добавить переменную `currentTrackId` в state app.js.
 
 ---
 
@@ -1542,7 +1469,7 @@ const { history } = await historyRes.json();
 1. **`server/db.js`** — добавить таблицу `game_results` + индексы в `initSchema()`.
 2. **`server/routes/results.js`** — создать файл: POST /api/results, GET /api/users/:id/history, GET /api/users/:id/stats.
 3. **`server/server.js`** — импортировать и подключить `resultsRouter`.
-4. **`js/app.js`** — добавить `currentTrackId` в state, устанавливать в `handleLibraryPlay`, вызывать POST /api/results в `handleGameEnd` (если авторизован).
+4. **`js/app.js`** — добавить `currentTrackId` в state, вызывать POST /api/results в `handleGameEnd` (если авторизован).
 5. **`js/ui/profile.js`** — загружать и отображать статистику + историю в `renderProfile`.
 6. **`tests/results.test.js`** — тесты для всех эндпоинтов.
 7. **`npm test`** — все тесты зелёные.
@@ -1557,13 +1484,13 @@ const { history } = await historyRes.json();
 4. **Минимум зависимостей.** Tailwind CDN, Google Fonts CDN. Больше ничего.
 5. **Чистый JS.** Без фреймворков (React, Vue, etc.). Vanilla JS + DOM.
 6. **Ошибки в UI.** Никаких `alert()` или `console.error()` для пользователя — только стилизованные toast.
-7. **Нет блокирующих операций.** Анализ аудио — `async/await` с progress callback. Main thread никогда не блокируется.
+7. **Нет блокирующих операций.** Аудио-операции — `async/await`. Main thread никогда не блокируется.
 8. **API-вызовы через fetch.** Все запросы к серверу — `async/await` + `try/catch` + UI-fallback.
 
 ### Backend
 9. **SQLite — zero config.** Файл БД `server/aerobeat.db` создаётся автоматически при первом запуске. WAL mode.
 10. **Дедупликация по хешу.** SHA-256 от содержимого файла. Один файл = одна запись на диске.
-11. **Beatmap хранится в БД.** JSON сериализуется в текстовую колонку. При загрузке из Library — десериализуется и передаётся клиенту без повторного анализа.
+11. **Beatmap хранится в БД.** JSON сериализуется в текстовую колонку. При загрузке трека beatmap десериализуется и передаётся клиенту без повторного анализа.
 12. **Multer для загрузки.** Валидация: `.mp3`, `.ogg`, `.wav`, `.flac`. Макс. размер: 50MB. Temp файл → hash rename.
 13. **CORS включён.** Frontend может быть на любом порту/API.
 14. **Статика.** Express раздаёт корень проекта + `uploads/` — аудиофайлы доступны по прямому URL.
@@ -1571,12 +1498,10 @@ const { history } = await historyRes.json();
 
 ## 8. Known Issues
 
-1. **Фон отличается от прототипа:** в прототипе `linear-gradient(135deg, #c6e7ff 0%, #00aeef 40%, #004c6b 100%)`, в реализации — aurora gradient с ribbon-слоями. Визуально красивее, но не совпадает с референсом.
+1. **Анализатор удалён:** модуль `js/audio/analyzer.js` удалён. Новый анализатор будет создан в Фазе 8. Без анализатора gameplay не запускает ноты (currentBeatmap = null).
 
-2. **Hardcoded `API_BASE`:** в `publishForm.js` URL захардкожен как `http://localhost:3000`. В `library.js` и `auth.js` используется `window.location.origin`.
+2. **Фон отличается от прототипа:** в прототипе `linear-gradient(135deg, #c6e7ff 0%, #00aeef 40%, #004c6b 100%)`, в реализации — aurora gradient с ribbon-слоями. Визуально красивее, но не совпадает с референсом.
 
 3. **Social — заглушка:** кнопка Social в bottom nav bar не имеет функционала (показывает toast «Coming soon»).
 
-4. **`assets/fonts/` пустая:** шрифты загружаются через CDN, локальные fallback-шрифты отсутствуют.
-
-5. **Login/Register формы — `<div>` вместо `<form>`:** в SPEC указаны `<form>`, но реальный код использует `<div>` с click-обработчиками на кнопках. Причина: `<form>` ломает layout нижнего нав-бара (Tailwind CSS). Если кто-то будет менять форму на `<form>` — проверять отображение bottom nav bar.
+4. **Library — заглушка:** кнопка Library в bottom nav bar не имеет функционала (показывает toast «Coming soon»).
