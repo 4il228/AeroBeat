@@ -77,7 +77,7 @@
 - Система авторизации (JWT) с профилем и статистикой
 - Серверное хранилище треков с REST API (Express + SQLite)
 - Дедупликация аудиофайлов по SHA-256 хешу
-- Система评分 с комбо, множителями, accuracy и грейдами
+- Система подсчёта очков с комбо, множителями, accuracy и грейдами
 - Pause система, drag & drop, responsive design
 - Тестирование через Vitest
 
@@ -228,7 +228,7 @@ Frontend построен на чистом Vanilla JS без фреймворк
 
 **Ключевые принципы:**
 - **Web Audio API только** — никаких `<audio>` элементов. `AudioContext.currentTime` — единственный источник времени для синхронизации.
-- **CSS-анимации优先** — ноты, рецепторы, HUD — DOM-элементы с `position: absolute` + `transform: translateY()`. Анимации через CSS `transition` и `@keyframes`.
+- **CSS-анимации в приоритете** — ноты, рецепторы, HUD — DOM-элементы с `position: absolute` + `transform: translateY()`. Анимации через CSS `transition` и `@keyframes`.
 - **Синхронизация — математика, не кадры** — позиция ноты ВСЕГДА вычисляется на основе `audioPlayer.currentTime`, не привязана к FPS.
 - **Object Pooling** — пул из 60 DOM-элементов для нот (избегаем `createElement`/`remove` в game loop).
 
@@ -824,7 +824,7 @@ test('categorizeHit returns perfect for delta < 50ms', () => {
 
 1. **Прототип — закон.** Визуал должен на 100% совпадать с `prototype/code.html`.
 2. **Web Audio API только.** Никаких `<audio>` элементов. `AudioContext.currentTime` — единственный источник времени.
-3. **CSS-анимации优先.** Для движения нот, fade, particles — CSS `transform` + `transition`/`@keyframes`.
+3. **CSS-анимации в приоритете.** Для движения нот, fade, particles — CSS `transform` + `transition`/`@keyframes`.
 4. **Минимум зависимостей.** Tailwind CDN, Google Fonts CDN. Больше ничего.
 5. **Чистый JS.** Без фреймворков. Vanilla JS + DOM.
 6. **Ошибки в UI.** Никаких `alert()` — только стилизованные toast.
