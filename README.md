@@ -856,4 +856,6 @@ test('categorizeHit returns perfect for delta < 50ms', () => {
 
 ## License
 
-Частный проект. Все права защищены.
+Этот проект лицензирован под **Creative Commons Attribution-ShareAlike 4.0 International** (CC BY-SA 4.0).
+
+Подробнее — в файле [LICENSE.md](./LICENSE.md).
